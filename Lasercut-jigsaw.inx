@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+	<_name>Lasercut Jigsaw</_name>
+	<id>org.inkscape.render.LasercutJigsaw</id>
+	<dependency type="executable" location="extensions">Lasercut-jigsaw.py</dependency>
+	<dependency type="executable" location="extensions">inkex.py</dependency>
+	<param name="tab" type="notebook">
+		<page name="Usage" _gui-text="Usage">
+			<_param name="laserjiguse" type="description" xml:space="preserve">Lasercut Jigsaw:
+			
+Jigsaw lines are single for minimal laser cutting.
+   (The pieces are not discrete shapes.)
+The outer edge can be a rectangle or have rounded corners.
+A Surrounding border can be added to frame the jigsaw.
+
+Notch size is related to the averaged Jigsaw piece size.
+
+Randomization creates irregularity for unique pieces.
+
+Adjust Notch size and Randomization to avoid overlapping lines:
+  - High values of randomization will cause overlapping lines
+    on small notches.
+  - Highly unbalanced grids (E.g. 9x2 with 0.5 notches) will
+    create overlapping lines.
+</_param>
+		</page>
+	</param>
+	<param name="width"  type="float" min="0.1" max="1000.0" _gui-text="Width">100.0</param>
+	<param name="height" type="float" min="0.1" max="1000.0" _gui-text="Height">80.0</param>
+	<param name="innerradius" type="float" min="0.0" max="500.0" _gui-text="Corner radius">5.0</param>
+	<param name="border" type="boolean" _gui-text="Outer Border">False</param>
+	<param name="borderwidth" type="float" min="0.0" max="500.0" _gui-text="    Border width">20.0</param>
+	<param name="outerradius" type="float" min="0.0" max="500.0" _gui-text="    Border radius">5.0</param>
+	<param name="pack" type="enum" _gui-text="    Pack Location">
+		<item value="Right">Right</item>
+		<item value="Below">Below</item>
+		<item value="Separate">Separate</item></param>
+	<param name="units" _gui-text="Units" type="optiongroup" appearance="minimal">
+		<option value="px">px</option>
+		<option value="pt">pt</option>
+		<option value="in">in</option>
+		<option value="cm">cm</option>
+		<option value="mm">mm</option></param>
+	<param name="pieces_W" type="int" min="2" max="199" _gui-text="How many pieces across">5</param>
+	<param name="pieces_H" type="int" min="2" max="199" _gui-text="How many pieces down">4</param>
+	<param name="notch_percent" type="float" min="0.0" max="1.0" _gui-text="Notch relative size">0.5</param>
+	<param name="rand" type="float" min="0.0" max="1.0" _gui-text="Grid Randomisation">0.4</param>
+	<param name="use_seed" type="boolean" _gui-text="Random jigsaw">True</param>
+	<param name="seed" type="int" min="0" max="99999999" _gui-text="   or Jigsaw pattern (seed)">12345</param>
+	<param name="pieces" type="boolean" _gui-text="Create pieces as well -experiemntal">false</param>
+	
+	<effect>
+		<object-type>all</object-type>
+		<effects-menu>
+			<submenu _name="Render"/>
+		</effects-menu>
+	</effect>
+	<script>
+		<command reldir="extensions" interpreter="python">Lasercut-jigsaw.py</command>
+	</script>
+</inkscape-extension>
