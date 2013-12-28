@@ -33,8 +33,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # add option to cut pieces:
 #    - taking two rows(cols) at a time - reverse the second one and concat on end - add z to close
 #    - taking a row and a col - do intersect = piece.
-# Wait for DBUS to work on windows then we can boolean.
-
 
 __version__ = "0.2"
 
@@ -581,7 +579,7 @@ class LasercutJigsaw(inkex.Effect):
         self.OptionParser.add_option("-j", "--pieces",
                         action="store", type="inkbool",
                         dest="pieces", default=False,
-                        help="Make extra pieces for manual boolen separation.")
+                        help="Make extra pieces for manual boolean separation.")
         # dummy for the doc tab - which is named
         self.OptionParser.add_option("--tab",
                         action="store", type="string", 
