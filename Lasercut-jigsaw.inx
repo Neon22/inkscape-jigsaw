@@ -38,12 +38,7 @@ Also the random nature of the layout.
 			<param name="use_seed" type="boolean" _gui-text="Random jigsaw">True</param>
 			<param name="seed" type="int" min="0" max="99999999" _gui-text="   or Jigsaw pattern (seed)">12345</param>
 			<_param name="laserjigspace" type="description" xml:space="preserve">
-			
-			
-			
-			
-			
-			
+Empty
 			</_param>
 			<param name="pieces" type="boolean" _gui-text="Create pieces as well (-experimental)">false</param>
 		</page>
