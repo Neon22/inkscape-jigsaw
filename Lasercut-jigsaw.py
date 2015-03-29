@@ -795,11 +795,11 @@ class LasercutJigsaw(inkex.Effect):
     ### The main function called by the Inkscape UI
     def effect(self):
         # document dimensions (for centering)
-        docW = inkex.unittouu(self.document.getroot().get('width'))
-        docH = inkex.unittouu(self.document.getroot().get('height'))
+        docW = inkex.Effect.unittouu(self.document.getroot().get('width'))
+        docH = inkex.Effect.unittouu(self.document.getroot().get('height'))
         # extract fields from UI
-        self.width  = inkex.unittouu( str(self.options.width)  + self.options.units )
-        self.height  = inkex.unittouu( str(self.options.height) + self.options.units )
+        self.width  = inkex.Effect.unittouu( str(self.options.width)  + self.options.units )
+        self.height  = inkex.Effect.unittouu( str(self.options.height) + self.options.units )
         self.pieces_W = self.options.pieces_W
         self.pieces_H = self.options.pieces_H
         average_block = (self.width/self.pieces_W + self.height/self.pieces_H) / 2
