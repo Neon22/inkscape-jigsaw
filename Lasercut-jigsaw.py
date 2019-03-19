@@ -40,7 +40,7 @@ import inkex, simplestyle, simpletransform, cubicsuperpath
 from simplepath import *
 import sys, math, random, copy
 
-def randomize((x, y), radius, norm=True, absolute=False):
+def randomize(x_y, radius, norm=True, absolute=False):
     """ return x,y moved by a random amount inside a radius.
         use uniform distribution unless
          - norm = True - then use a normal distribution
@@ -49,6 +49,7 @@ def randomize((x, y), radius, norm=True, absolute=False):
         # r = abs(random.normalvariate(0.0,0.5*radius))
     # else:
         # r = random.uniform(0.0,radius)
+    x, y = x_y
     a = random.uniform(0.0,2*math.pi)
     x += math.cos(a)*radius
     y += math.sin(a)*radius
