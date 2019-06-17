@@ -35,6 +35,8 @@ Also the random nature of the layout.
 			</_param>
 			<param name="notch_percent" type="float" min="0.0" max="1.0" _gui-text="Notch relative size">0.5</param>
 			<param name="rand" type="float" min="0.0" max="1.0" _gui-text="Grid Randomisation">0.4</param>
+			<param name="smooth_edges" type="boolean" _gui-text="Some edges can be smooth">False</param>
+			<param name="noknob_frequency" type="float" min="0.0" max="100.0" _gui-text="   percentage of smooth edges">10</param>			
 			<param name="use_seed" type="boolean" _gui-text="Random jigsaw">True</param>
 			<param name="seed" type="int" min="0" max="99999999" _gui-text="   or Jigsaw pattern (seed)">12345</param>
 			<_param name="laserjigspace" type="description" xml:space="preserve">
