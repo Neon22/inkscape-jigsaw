@@ -18,7 +18,7 @@ Define the Jigsaw size and grid size.
 				<option value="in">in</option>
 				<option value="cm">cm</option>
 				<option value="mm">mm</option></param>
-			<param name="border" type="boolean" _gui-text="Outer Border">False</param>
+			<param name="border" type="boolean" _gui-text="Outer Border">false</param>
 			<param name="borderwidth" type="float" min="0.0" max="500.0" _gui-text="    Border width">20.0</param>
 			<param name="outerradius" type="float" min="0.0" max="500.0" _gui-text="    Border radius">5.0</param>
 			<param name="pack" type="enum" _gui-text="    Pack Location">
@@ -35,7 +35,7 @@ Also the random nature of the layout.
 			</_param>
 			<param name="notch_percent" type="float" min="0.0" max="1.0" _gui-text="Notch relative size">0.5</param>
 			<param name="rand" type="float" min="0.0" max="1.0" _gui-text="Grid Randomisation">0.4</param>
-			<param name="use_seed" type="boolean" _gui-text="Random jigsaw">True</param>
+			<param name="use_seed" type="boolean" _gui-text="Random jigsaw">false</param>
 			<param name="seed" type="int" min="0" max="99999999" _gui-text="   or Jigsaw pattern (seed)">12345</param>
 			<_param name="laserjigspace" type="description" xml:space="preserve">
 Empty
