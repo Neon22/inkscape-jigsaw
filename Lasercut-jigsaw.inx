@@ -18,7 +18,7 @@ Define the Jigsaw size and grid size.
 				<option value="in">in</option>
 				<option value="cm">cm</option>
 				<option value="mm">mm</option></param>
-			<param name="border" type="boolean" _gui-text="Outer Border">False</param>
+			<param name="border" type="boolean" _gui-text="Outer Border">false</param>
 			<param name="borderwidth" type="float" min="0.0" max="500.0" _gui-text="    Border width">20.0</param>
 			<param name="outerradius" type="float" min="0.0" max="500.0" _gui-text="    Border radius">5.0</param>
 			<param name="pack" type="enum" _gui-text="    Pack Location">
