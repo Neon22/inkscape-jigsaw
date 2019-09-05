@@ -28,13 +28,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 ### 0.1 make basic jigsaw for lasercut - March 2011
 ### 0.2 add random seed so repeatable, add pieces for manual booleans - May 2011
+### 0.3 add some no-knob edges - June 2019
 
 ### Todo
 # add option to cut pieces:
 #    - taking two rows(cols) at a time - reverse the second one and concat on end - add z to close
 #    - taking a row and a col - do intersect = piece.
 
-__version__ = "0.2"
+__version__ = "0.3"
 
 import inkex, simplestyle, simpletransform, cubicsuperpath
 from simplepath import *
@@ -581,6 +582,14 @@ class LasercutJigsaw(inkex.Effect):
                         action="store", type="inkbool",
                         dest="pieces", default=False,
                         help="Make extra pieces for manual boolean separation.")
+        self.OptionParser.add_option("-n", "--smooth_edges",
+                        action="store", type="inkbool",
+                        dest="smooth_edges", default=False,
+                        help="Allow pieces with smooth edges.")
+        self.OptionParser.add_option("-f", "--noknob_frequency",
+                        action="store", type="float",
+                        dest="noknob_frequency", default=10,
+                        help="Percentage of smooth-sided edges.")						
         # dummy for the doc tab - which is named
         self.OptionParser.add_option("--tab",
                         action="store", type="string", 
@@ -606,38 +615,52 @@ class LasercutJigsaw(inkex.Effect):
             flip = 1
             if random.uniform(0.0,1.0) < 0.5:
                 flip = -1
-            pt1 = randomize((startx-self.notch_step+i*stepx/2+stepx/2*(i-1), starty+self.notch_step/4*flip), self.random_radius/3, True)
-            pt2 = randomize((startx-self.notch_step+i*stepx/2+stepx/2*(i-1), starty-self.notch_step*flip), self.random_radius/3, True)
-            # pt3 is foor tip of the notch - required ?
-            pt4 = randomize((startx+self.notch_step+i*stepx/2+stepx/2*(i-1), starty-self.notch_step*flip), self.random_radius/3, True) #mirror of 2
-            pt5 = randomize((startx+self.notch_step+i*stepx/2+stepx/2*(i-1), starty+self.notch_step/4*flip), self.random_radius/3, True) # mirror of pt1
-            # Create random local value for x,y of handle - then reflect to enforce smoothness
-            rand1 = randomize((0, 0), self.random_radius/4, True, True)
-            rand2 = randomize((0, 0), self.random_radius/4, True, True)
-            rand4 = randomize((0, 0), self.random_radius/4, True, True)
-            rand5 = randomize((0, 0), self.random_radius/4, True, True)
-            # up to pt1
-            #ctrl1_2 = (startx+i*stepx/2+(i-1)*stepx/2, starty-self.notch_step/3)
-            ctrl1 = (self.notch_step/1.2, -self.notch_step/3)
-            clist.extend([pt1[0]-ctrl1[0]-rand1[0], pt1[1]-ctrl1[1]*flip+rand1[1]*flip])
-            clist.extend(pt1)
-            # up to pt2
-            clist.extend([pt1[0]+ctrl1[0]+rand1[0], pt1[1]+ctrl1[1]*flip-rand1[1]*flip])
-            ctrl2 = (0, -self.notch_step/1.2)
-            clist.extend([pt2[0]+ctrl2[0]-rand2[0], pt2[1]-ctrl2[1]*flip+rand2[1]*flip])
-            clist.extend(pt2)
-            # up to pt4
-            clist.extend([pt2[0]-ctrl2[0]+rand2[0], pt2[1]+ctrl2[1]*flip-rand2[1]*flip])
-            ctrl4 = (0, self.notch_step/1.2)
-            clist.extend([pt4[0]+ctrl4[0]-rand4[0], pt4[1]-ctrl4[1]*flip+rand4[1]*flip])
-            clist.extend(pt4)
-            # up to pt5
-            clist.extend([pt4[0]-ctrl4[0]+rand4[0], pt4[1]+ctrl4[1]*flip-rand4[1]*flip])
-            ctrl5 = (self.notch_step/1.2, self.notch_step/3)
-            clist.extend([pt5[0]-ctrl5[0]+rand5[0], pt5[1]-ctrl5[1]*flip-rand5[1]*flip])
-            clist.extend(pt5)
-            # last ctrl point for next step
-            clist.extend([pt5[0]+ctrl5[0]-rand5[0], pt5[1]+ctrl5[1]*flip+rand5[1]*flip])        
+            do_smooth = False
+            if self.smooth_edges:
+                if random.uniform(0.0,100.0) < self.noknob_frequency:
+                    do_smooth = True
+            if do_smooth:
+                pt1 = randomize((startx+i*stepx/2+stepx/2*(i-1), starty), self.random_radius/3, True)
+                rand1 = randomize((0, 0), self.random_radius/4, True, True)
+                # up to pt1
+                ctrl1 = (-self.notch_step*1.5, self.notch_step*1.5)
+                clist.extend([pt1[0]+ctrl1[0]-rand1[0], pt1[1]-ctrl1[1]*flip+rand1[1]*flip])
+                clist.extend(pt1)
+                # last ctrl point for next step
+                clist.extend([pt1[0]-ctrl1[0]+rand1[0], pt1[1]+ctrl1[1]*flip-rand1[1]*flip])
+            else:
+                pt1 = randomize((startx-self.notch_step+i*stepx/2+stepx/2*(i-1), starty+self.notch_step/4*flip), self.random_radius/3, True)
+                pt2 = randomize((startx-self.notch_step+i*stepx/2+stepx/2*(i-1), starty-self.notch_step*flip), self.random_radius/3, True)
+                # pt3 is foor tip of the notch - required ?
+                pt4 = randomize((startx+self.notch_step+i*stepx/2+stepx/2*(i-1), starty-self.notch_step*flip), self.random_radius/3, True) #mirror of 2
+                pt5 = randomize((startx+self.notch_step+i*stepx/2+stepx/2*(i-1), starty+self.notch_step/4*flip), self.random_radius/3, True) # mirror of pt1
+                # Create random local value for x,y of handle - then reflect to enforce smoothness
+                rand1 = randomize((0, 0), self.random_radius/4, True, True)
+                rand2 = randomize((0, 0), self.random_radius/4, True, True)
+                rand4 = randomize((0, 0), self.random_radius/4, True, True)
+                rand5 = randomize((0, 0), self.random_radius/4, True, True)
+                # up to pt1
+                #ctrl1_2 = (startx+i*stepx/2+(i-1)*stepx/2, starty-self.notch_step/3)
+                ctrl1 = (self.notch_step/1.2, -self.notch_step/3)
+                clist.extend([pt1[0]-ctrl1[0]-rand1[0], pt1[1]-ctrl1[1]*flip+rand1[1]*flip])
+                clist.extend(pt1)
+                # up to pt2
+                clist.extend([pt1[0]+ctrl1[0]+rand1[0], pt1[1]+ctrl1[1]*flip-rand1[1]*flip])
+                ctrl2 = (0, -self.notch_step/1.2)
+                clist.extend([pt2[0]+ctrl2[0]-rand2[0], pt2[1]-ctrl2[1]*flip+rand2[1]*flip])
+                clist.extend(pt2)
+                # up to pt4
+                clist.extend([pt2[0]-ctrl2[0]+rand2[0], pt2[1]+ctrl2[1]*flip-rand2[1]*flip])
+                ctrl4 = (0, self.notch_step/1.2)
+                clist.extend([pt4[0]+ctrl4[0]-rand4[0], pt4[1]-ctrl4[1]*flip+rand4[1]*flip])
+                clist.extend(pt4)
+                # up to pt5
+                clist.extend([pt4[0]-ctrl4[0]+rand4[0], pt4[1]+ctrl4[1]*flip-rand4[1]*flip])
+                ctrl5 = (self.notch_step/1.2, self.notch_step/3)
+                clist.extend([pt5[0]-ctrl5[0]+rand5[0], pt5[1]-ctrl5[1]*flip-rand5[1]*flip])
+                clist.extend(pt5)
+                # last ctrl point for next step
+                clist.extend([pt5[0]+ctrl5[0]-rand5[0], pt5[1]+ctrl5[1]*flip+rand5[1]*flip])        
         #
         clist.extend([width, starty, width, starty]) # doubled up at end for smooth curve
         line_path.append(['C',clist])
@@ -805,6 +828,8 @@ class LasercutJigsaw(inkex.Effect):
         self.pieces_H = self.options.pieces_H
         average_block = (self.width/self.pieces_W + self.height/self.pieces_H) / 2
         self.notch_step = average_block * self.options.notch_percent / 3 # 3 = a useful notch size factor
+        self.smooth_edges = self.options.smooth_edges
+        self.noknob_frequency = self.options.noknob_frequency		
         self.random_radius = self.options.rand * average_block / 5 # 5 = a useful range factor
         self.inner_radius = self.options.innerradius
         if self.inner_radius < 0.01: self.inner_radius = 0.0 # snap to 0 for UI error when setting spinner to 0.0
