@@ -15,3 +15,8 @@ May one day be extended to do boolean cuts and create separate pieces. (Will req
 Currently there is an experimental checkbox which will create pieces suitable for laborious manual boolean operations.
 
 Useful if you want separate jigsaw pieces.
+
+Usage
+-----
+
+Go to the Extensions menu > Render > Lasercut Jigsaw...
