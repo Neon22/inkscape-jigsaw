@@ -1,6 +1,8 @@
 Inkscape-jigsaw
 ===============
 
+![Default generated jigsaw](default-jigsaw.svg)
+
 An extension for Inkscape that creates jigsaw shaped pieces. Options for back, and single cut pieces.
 Creates a jigsaw puzzle for laser cutting.
 * set dimensions in various units,
