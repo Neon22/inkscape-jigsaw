@@ -18,6 +18,19 @@ Currently there is an experimental checkbox which will create pieces suitable fo
 
 Useful if you want separate jigsaw pieces.
 
+Install
+-------
+
+Download from Inkscape's Extensions page [here](https://inkscape.org/~Neon22/%E2%98%85lasercut-jigsaw).
+
+### Linux
+Copy extension files `Lasercut-jigsaw.inx` and `Lasercut-jigsaw.py` into `~/.config/inkscape/extensions`.
+
+### Windows
+Copy extension files `Lasercut-jigsaw.inx` and `Lasercut-jigsaw.py` into the path shown in Inkscape preferences.
+See Edit > Preferences > System: User extensions.
+
+
 Usage
 -----
 
