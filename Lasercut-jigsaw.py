@@ -40,6 +40,8 @@ __version__ = "0.3"
 import inkex, simplestyle, simpletransform, cubicsuperpath
 from simplepath import *
 import sys, math, random, copy
+from lxml import etree
+from inkex import paths
 
 def randomize(x_y, radius, norm=True, absolute=False):
     """ return x,y moved by a random amount inside a radius.
@@ -87,11 +89,11 @@ def add_rounded_rectangle(startx, starty, radius, width, height, style, name, pa
             line_path.append(['l', [width, 0, 0, height, -width, 0, 0, -height]])
     #
     #sys.stderr.write("%s\n"% line_path)
-    attribs = {'style':simplestyle.formatStyle(style),
+    attribs = {'style':str(inkex.Style(style)),
                     inkex.addNS('label','inkscape'):name,
-                    'd':formatPath(line_path)}
+                    'd':str(paths.Path(paths.CubicSuperPath(line_path).to_path().to_arrays()))}
     #sys.stderr.write("%s\n"% attribs)
-    inkex.etree.SubElement(parent, inkex.addNS('path','svg'), attribs )
+    etree.SubElement(parent, inkex.addNS('path','svg'), attribs )
 
 
 
@@ -522,77 +524,77 @@ class LasercutJigsaw(inkex.Effect):
 
     def __init__(self):
         inkex.Effect.__init__(self)
-        self.OptionParser.add_option("-x", "--width",
-                        action="store", type="float",
+        self.arg_parser.add_argument("-x", "--width",
+                        action="store", type=float,
                         dest="width", default=50.0,
                         help="The Box Width - in the X dimension")
-        self.OptionParser.add_option("-y", "--height",
-                        action="store", type="float",
+        self.arg_parser.add_argument("-y", "--height",
+                        action="store", type=float,
                         dest="height", default=30.0,
                         help="The Box Height - in the Y dimension")
-        self.OptionParser.add_option("-u", "--units",
-                        action="store", type="string",
+        self.arg_parser.add_argument("-u", "--units",
+                        action="store", type=str,
                         dest="units", default="cm",
                         help="The unit of the box dimensions")
-        self.OptionParser.add_option("-w", "--pieces_W",
-                        action="store", type="int",
+        self.arg_parser.add_argument("-w", "--pieces_W",
+                        action="store", type=int,
                         dest="pieces_W", default=11,
                         help="How many pieces across")
-        self.OptionParser.add_option("-z", "--pieces_H",
-                        action="store", type="int",
+        self.arg_parser.add_argument("-z", "--pieces_H",
+                        action="store", type=int,
                         dest="pieces_H", default=11,
                         help="How many pieces down")
-        self.OptionParser.add_option("-k", "--notch_percent",
-                        action="store", type="float",
+        self.arg_parser.add_argument("-k", "--notch_percent",
+                        action="store", type=float,
                         dest="notch_percent", default=0.0,
                         help="Notch relative size. 0 to 1. 0.15 is good")
-        self.OptionParser.add_option("-r", "--rand",
-                        action="store", type="float",
+        self.arg_parser.add_argument("-r", "--rand",
+                        action="store", type=float,
                         dest="rand", default=0.1,
                         help="Amount to perturb the basic piece grid.")
-        self.OptionParser.add_option("-i", "--innerradius",
-                        action="store", type="float",
+        self.arg_parser.add_argument("-i", "--innerradius",
+                        action="store", type=float,
                         dest="innerradius", default=5.0,
                         help="0 implies square corners")
-        self.OptionParser.add_option("-b", "--border",
-                        action="store", type="inkbool",
+        self.arg_parser.add_argument("-b", "--border",
+                        action="store", type=inkex.Boolean,
                         dest="border", default=False,
                         help="Add Outer Surround")
-        self.OptionParser.add_option("-a", "--borderwidth",
-                        action="store", type="float",
+        self.arg_parser.add_argument("-a", "--borderwidth",
+                        action="store", type=float,
                         dest="borderwidth", default=10.0,
                         help="Size of external surrounding border.")
-        self.OptionParser.add_option("-o", "--outerradius",
-                        action="store", type="float",
+        self.arg_parser.add_argument("-o", "--outerradius",
+                        action="store", type=float,
                         dest="outerradius", default=5.0,
                         help="0 implies square corners")
-        self.OptionParser.add_option("-p", "--pack",
-                        action="store", type="string",
+        self.arg_parser.add_argument("-p", "--pack",
+                        action="store", type=str,
                         dest="pack", default="Below",
                         help="Where to place backing piece on page")
-        self.OptionParser.add_option("-g", "--use_seed",
-                        action="store", type="inkbool",
+        self.arg_parser.add_argument("-g", "--use_seed",
+                        action="store", type=inkex.Boolean,
                         dest="use_seed", default=False,
                         help="Use the kerf value as the drawn line width")
-        self.OptionParser.add_option("-s", "--seed",
-                        action="store", type="int",
+        self.arg_parser.add_argument("-s", "--seed",
+                        action="store", type=int,
                         dest="seed", default=12345,
                         help="Random seed for repeatability")
-        self.OptionParser.add_option("-j", "--pieces",
-                        action="store", type="inkbool",
+        self.arg_parser.add_argument("-j", "--pieces",
+                        action="store", type=inkex.Boolean,
                         dest="pieces", default=False,
                         help="Make extra pieces for manual boolean separation.")
-        self.OptionParser.add_option("-n", "--smooth_edges",
-                        action="store", type="inkbool",
+        self.arg_parser.add_argument("-n", "--smooth_edges",
+                        action="store", type=inkex.Boolean,
                         dest="smooth_edges", default=False,
                         help="Allow pieces with smooth edges.")
-        self.OptionParser.add_option("-f", "--noknob_frequency",
-                        action="store", type="float",
+        self.arg_parser.add_argument("-f", "--noknob_frequency",
+                        action="store", type=float,
                         dest="noknob_frequency", default=10,
                         help="Percentage of smooth-sided edges.")						
         # dummy for the doc tab - which is named
-        self.OptionParser.add_option("--tab",
-                        action="store", type="string", 
+        self.arg_parser.add_argument("--tab",
+                        action="store", type=str, 
                         dest="tab", default="use",
                         help="The selected UI-tab when OK was pressed")
         # internal useful variables
@@ -665,9 +667,9 @@ class LasercutJigsaw(inkex.Effect):
         clist.extend([width, starty, width, starty]) # doubled up at end for smooth curve
         line_path.append(['C',clist])
         #sys.stderr.write("%s\n"% line_path)
-        line_style = simplestyle.formatStyle(style)
-        attribs = { 'style':line_style, 'id':name, 'd':formatPath(line_path) }
-        inkex.etree.SubElement(parent, inkex.addNS('path','svg'), attribs )
+        line_style = str(inkex.Style(style))
+        attribs = { 'style':line_style, 'id':name, 'd':str(paths.Path(paths.CubicSuperPath(line_path).to_path().to_arrays()))}
+        etree.SubElement(parent, inkex.addNS('path','svg'), attribs )
 
     def create_horiz_blocks(self, group, gridy, style):
         path = lastpath = 0
@@ -692,7 +694,7 @@ class LasercutJigsaw(inkex.Effect):
                     #
                     name = "RowPieces_%d" % (count)
                     attribs = { 'style':style, 'id':name, 'd':spath }
-                    n = inkex.etree.SubElement(group, inkex.addNS('path','svg'), attribs )
+                    n = etree.SubElement(group, inkex.addNS('path','svg'), attribs )
                     blocks.append(n) # for direct traversal later
                 else: # internal line - concat a reversed version with the last one
                     thispath = copy.deepcopy(path)
@@ -701,8 +703,8 @@ class LasercutJigsaw(inkex.Effect):
                     thispath[0].reverse() # reverse the entire line
                     lastpath[0].extend(thispath[0]) # append
                     name = "RowPieces_%d" % (count)
-                    attribs = { 'style':style, 'id':name, 'd':cubicsuperpath.formatPath(lastpath) }
-                    n = inkex.etree.SubElement(group, inkex.addNS('path','svg'), attribs )
+                    attribs = { 'style':style, 'id':name, 'd':str(paths.Path(paths.CubicSuperPath(lastpath).to_path().to_arrays())) }
+                    n = etree.SubElement(group, inkex.addNS('path','svg'), attribs )
                     blocks.append(n) # for direct traversal later
                     n.set('d', n.get('d')+'z') # close it
                 #
@@ -722,7 +724,7 @@ class LasercutJigsaw(inkex.Effect):
         #
         name = "RowPieces_%d" % (count)
         attribs = { 'style':style, 'id':name, 'd':spath }
-        n = inkex.etree.SubElement(group, inkex.addNS('path','svg'), attribs )
+        n = etree.SubElement(group, inkex.addNS('path','svg'), attribs )
         blocks.append(n) # for direct traversal later
         #
         return(blocks)
@@ -751,7 +753,7 @@ class LasercutJigsaw(inkex.Effect):
                     #
                     name = "ColPieces_%d" % (count)
                     attribs = { 'style':style, 'id':name, 'd':spath }
-                    n = inkex.etree.SubElement(group, inkex.addNS('path','svg'), attribs )
+                    n = etree.SubElement(group, inkex.addNS('path','svg'), attribs )
                     blocks.append(n) # for direct traversal later
                 else: # internal line - concat a reversed version with the last one
                     thispath = copy.deepcopy(path)
@@ -760,8 +762,8 @@ class LasercutJigsaw(inkex.Effect):
                     thispath[0].reverse() # reverse the entire line
                     lastpath[0].extend(thispath[0]) # append
                     name = "ColPieces_%d" % (count)
-                    attribs = { 'style':style, 'id':name, 'd':cubicsuperpath.formatPath(lastpath) }
-                    n = inkex.etree.SubElement(group, inkex.addNS('path','svg'), attribs )
+                    attribs = { 'style':style, 'id':name, 'd':str(paths.Path(paths.CubicSuperPath(lastpath).to_path().to_arrays())) }
+                    n = etree.SubElement(group, inkex.addNS('path','svg'), attribs )
                     blocks.append(n) # for direct traversal later
                     n.set('d', n.get('d')+'z') # close it
                 #
@@ -781,7 +783,7 @@ class LasercutJigsaw(inkex.Effect):
         #
         name = "ColPieces_%d" % (count)
         attribs = { 'style':style, 'id':name, 'd':spath }
-        n = inkex.etree.SubElement(group, inkex.addNS('path','svg'), attribs )
+        n = etree.SubElement(group, inkex.addNS('path','svg'), attribs )
         blocks.append(n) # for direct traversal later
         #
         return(blocks)
@@ -794,8 +796,8 @@ class LasercutJigsaw(inkex.Effect):
         # Create new group
         g_attribs = {inkex.addNS('label','inkscape'):'JigsawPieces:X' + \
                      str( self.pieces_W )+':Y'+str( self.pieces_H ) }
-        jigsaw_pieces = inkex.etree.SubElement(jigsaw, 'g', g_attribs)
-        line_style = simplestyle.formatStyle(self.line_style)
+        jigsaw_pieces = etree.SubElement(jigsaw, 'g', g_attribs)
+        line_style = str(inkex.Style(self.line_style))
         #
         xblocks = self.create_horiz_blocks(jigsaw_pieces, gridy, line_style)
         #sys.stderr.write("count: %s\n"% dir(gridx))
@@ -819,11 +821,11 @@ class LasercutJigsaw(inkex.Effect):
     ### The main function called by the Inkscape UI
     def effect(self):
         # document dimensions (for centering)
-        docW = self.unittouu(self.document.getroot().get('width'))
-        docH = self.unittouu(self.document.getroot().get('height'))
+        docW = self.svg.unittouu(self.document.getroot().get('width'))
+        docH = self.svg.unittouu(self.document.getroot().get('height'))
         # extract fields from UI
-        self.width  = self.unittouu( str(self.options.width)  + self.options.units )
-        self.height  = self.unittouu( str(self.options.height) + self.options.units )
+        self.width  = self.svg.unittouu( str(self.options.width)  + self.options.units )
+        self.height  = self.svg.unittouu( str(self.options.height) + self.options.units )
         self.pieces_W = self.options.pieces_W
         self.pieces_H = self.options.pieces_H
         average_block = (self.width/self.pieces_W + self.height/self.pieces_H) / 2
@@ -848,13 +850,13 @@ class LasercutJigsaw(inkex.Effect):
         # set up the main object in the current layer - group gridlines
         g_attribs = {inkex.addNS('label','inkscape'):'Jigsaw:X' + \
                      str( self.pieces_W )+':Y'+str( self.pieces_H ) }
-        jigsaw_group = inkex.etree.SubElement(self.current_layer, 'g', g_attribs)
+        jigsaw_group = etree.SubElement(self.svg.get_current_layer(), 'g', g_attribs)
         #Group for X grid
         g_attribs = {inkex.addNS('label','inkscape'):'X_Gridlines'}
-        gridx = inkex.etree.SubElement(jigsaw_group, 'g', g_attribs)
+        gridx = etree.SubElement(jigsaw_group, 'g', g_attribs)
         #Group for Y grid
         g_attribs = {inkex.addNS('label','inkscape'):'Y_Gridlines'}
-        gridy = inkex.etree.SubElement(jigsaw_group, 'g', g_attribs)
+        gridy = etree.SubElement(jigsaw_group, 'g', g_attribs)
 
         # Draw the Border
         add_rounded_rectangle(0,0, self.inner_radius, self.width, self.height, self.line_style, 'innerborder', jigsaw_group)
@@ -902,4 +904,4 @@ class LasercutJigsaw(inkex.Effect):
 ###
 if __name__ == '__main__':
     e = LasercutJigsaw()
-    e.affect()
+    e.run()
