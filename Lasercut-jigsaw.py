@@ -37,12 +37,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 __version__ = "0.3"
 
-import inkex, simplestyle, simpletransform, cubicsuperpath
+import inkex, simplestyle, simpletransform
 from simplepath import *
 import sys, math, random, copy
 from lxml import etree
-from inkex import paths
+from inkex.paths import Path, CubicSuperPath
 
+def dirtyFormat(path):
+    return str(path).replace('[','').replace(']','').replace(',','').replace('\'','')
+          
 def randomize(x_y, radius, norm=True, absolute=False):
     """ return x,y moved by a random amount inside a radius.
         use uniform distribution unless
@@ -60,7 +63,6 @@ def randomize(x_y, radius, norm=True, absolute=False):
         x = abs(x)
         y = abs(y)
     return [x, y]
-
 
 def add_rounded_rectangle(startx, starty, radius, width, height, style, name, parent, mask=False):
     line_path = [['M', [startx, starty+radius]]]
@@ -89,514 +91,42 @@ def add_rounded_rectangle(startx, starty, radius, width, height, style, name, pa
             line_path.append(['l', [width, 0, 0, height, -width, 0, 0, -height]])
     #
     #sys.stderr.write("%s\n"% line_path)
-    attribs = {'style':str(inkex.Style(style)),
-                    inkex.addNS('label','inkscape'):name,
-                    'd':str(paths.Path(paths.CubicSuperPath(line_path).to_path().to_arrays()))}
+    attribs = {'style':str(inkex.Style(style)), inkex.addNS('label','inkscape'):name, 'd':dirtyFormat(line_path)}
     #sys.stderr.write("%s\n"% attribs)
     etree.SubElement(parent, inkex.addNS('path','svg'), attribs )
 
-
-
 ###----------------------
 ### all for intersection  from http://www.kevlindev.com/gui/index.htm
-"""polynomial constructor
-    Polynomial.prototype.init = function(coefs) {
-    this.coefs = new Array();
-
-    for ( var i = coefs.length - 1; i >= 0; i-- )
-        this.coefs.push( coefs[i] );
-
-    this._variable = "t";
-    this._s = 0;   """
 
 def get_derivative(polynomial):
-    """ Polynomial.prototype.getDerivative = function() {
-    var derivative = new Polynomial();
-
-    for ( var i = 1; i < this.coefs.length; i++ ) {
-        derivative.coefs.push(i*this.coefs[i]);
-    }
-
-    return derivative;   """
     deriv = []
     for i in range(len(polynomial)):
         deriv.append(i* polynomial[i])
     return deriv
 
-
-def getroots_in_interval():
-    """ Polynomial.prototype.getRootsInInterval = function(min, max) {
-    var roots = new Array();
-    var root;
-
-    if ( this.getDegree() == 1 ) {
-        root = this.bisection(min, max);
-        if ( root != null ) roots.push(root);
-    } else {
-        // get roots of derivative
-        var deriv  = this.getDerivative();
-        var droots = deriv.getRootsInInterval(min, max);
-
-        if ( droots.length > 0 ) {
-            // find root on [min, droots[0]]
-            root = this.bisection(min, droots[0]);
-            if ( root != null ) roots.push(root);
-
-            // find root on [droots[i],droots[i+1]] for 0 <= i <= count-2
-            for ( i = 0; i <= droots.length-2; i++ ) {
-                root = this.bisection(droots[i], droots[i+1]);
-                if ( root != null ) roots.push(root);
-            }
-
-            // find root on [droots[count-1],xmax]
-            root = this.bisection(droots[droots.length-1], max);
-            if ( root != null ) roots.push(root);
-        } else {
-            // polynomial is monotone on [min,max], has at most one root
-            root = this.bisection(min, max);
-            if ( root != null ) roots.push(root);
-        }
-    }
-
-    return roots;   """
-    pass
-
-
-def bisection(polynomial, minimum, maximum):
-    """ Polynomial.prototype.bisection = function(min, max) {
-    var minValue = this.eval(min);
-    var maxValue = this.eval(max);
-    var result;
-    
-    if ( Math.abs(minValue) <= Polynomial.TOLERANCE )
-        result = min;
-    else if ( Math.abs(maxValue) <= Polynomial.TOLERANCE )
-        result = max;
-    else if ( minValue * maxValue <= 0 ) {
-        var tmp1  = Math.log(max - min);
-        var tmp2  = Math.LN10 * Polynomial.ACCURACY;
-        var iters = Math.ceil( (tmp1+tmp2) / Math.LN2 );
-
-        for ( var i = 0; i < iters; i++ ) {
-            result = 0.5 * (min + max);
-            var value = this.eval(result);
-
-            if ( Math.abs(value) <= Polynomial.TOLERANCE ) {
-                break;
-            }
-
-            if ( value * minValue < 0 ) {
-                max = result;
-                maxValue = value;
-            } else {
-                min = result;
-                minValue = value;
-            }
-        }
-    }
-
-    return result;   """
-    pass
-
-
-##def intersect_bezier(a1, a2, a3, a4, b1, b2, b3, b4):
-##    """
-##        """
-##    # Calculate the coefficients of cubic polynomial
-##    #a = a1.multiply(-1);
-##    a = [i*-1 for i in a1]
-##    #b = a2.multiply(3);
-##    b = [i*3 for i in a2]
-##    #c = a3.multiply(-3);
-##    c = [i*-3 for i in a3]
-##    #d = a.add(b.add(c.add(a4)));
-##    d = [a[i]+b[i]+c[i]+a4[i] for i in range(len(a))]
-##    #c13 = new Vector2D(d.x, d.y);
-##    c13 = copy.deepcopy(d)
-##
-##    #a = a1.multiply(3);
-##    a = [i*3 for i in a1]
-##    #b = a2.multiply(-6);
-##    b = [i*-6 for i in a2]
-##    #c = a3.multiply(3);
-##    c = [i*3 for i in a3]
-##    #d = a.add(b.add(c));
-##    d = [a[i]+b[i]+c[i] for i in range(len(a))]
-##    #c12 = new Vector2D(d.x, d.y);
-##    c12 = copy.deepcopy(d)
-##
-##    #a = a1.multiply(-3);
-##    a = [i*-3 for i in a1]
-##    #b = a2.multiply(3);
-##    b = [i*3 for i in a2]
-##    #c = a.add(b);
-##    c = [a[i]+b[i] for i in range(len(a))]
-##    #c11 = new Vector2D(c.x, c.y);
-##    c11 = copy.deepcopy(c)
-##    #c10 = new Vector2D(a1.x, a1.y);
-##    c10 = copy.deepcopy(a1)
-##
-##    #a = b1.multiply(-1);
-##    a = [i*-1 for i in b1]
-##    #b = b2.multiply(3);
-##    b = [i*3 for i in b2]
-##    #c = b3.multiply(-3);
-##    c = [i*-3 for i in b3]
-##    #d = a.add(b.add(c.add(b4)));
-##    d = [a[i]+b[i]+c[i]+b4[i] for i in range(len(a))]
-##    #c23 = new Vector2D(d.x, d.y);
-##    c23 = copy.deepcopy(d)
-##
-##    #a = b1.multiply(3);
-##    a = [i*3 for i in b1]
-##    #b = b2.multiply(-6);
-##    b = [i*-6 for i in b2]
-##    #c = b3.multiply(3);
-##    c = [i*3 for i in b3]
-##    #d = a.add(b.add(c));
-##    d = [b[i]+c[i] for i in range(len(b))]
-##    #c22 = new Vector2D(d.x, d.y);
-##    c22 = copy.deepcopy(d)
-##
-##    #a = b1.multiply(-3);
-##    a = [i*-3 for i in b1]
-##    #b = b2.multiply(3);
-##    b = [i*3 for i in b2]
-##    #c = a.add(b);
-##    c = [a[i]+b[i] for i in range(len(a))]
-##    #c21 = new Vector2D(c.x, c.y);
-##    c21 = copy.deepcopy(c)
-##    #c20 = new Vector2D(b1.x, b1.y);
-##    c20 = copy.deepcopy(b)
-##
-##    c10x2 = c10[0]*c10[0]
-##    c10x3 = c10[0]*c10[0]*c10[0]
-##    c10y2 = c10[1]*c10[1]
-##    c10y3 = c10.y*c10[1]*c10[1]
-##    c11x2 = c11[0]*c11[0]
-##    c11x3 = c11[0]*c11[0]*c11[0]
-##    c11y2 = c11[1]*c11[1]
-##    c11y3 = c11[1]*c11[1]*c11[1]
-##    c12x2 = c12[0]*c12[0]
-##    c12x3 = c12[0]*c12[0]*c12[0]
-##    c12y2 = c12[1]*c12.[1]
-##    c12y3 = c12[1]*c12[1]*c12[1]
-##    c13x2 = c13[0]*c13[0]
-##    c13x3 = c13[0]*c13[0]*c13[0]
-##    c13y2 = c13[1]*c13[1]
-##    c13y3 = c13[1]*c13[1]*c13[1]
-##    c20x2 = c20[0]*c20[0]
-##    c20x3 = c20[0]*c20[0]*c20[0]
-##    c20y2 = c20[1]*c20[1]
-##    c20y3 = c20[1]*c20[1]*c20[1]
-##    c21x2 = c21[0]*c21[0]
-##    c21x3 = c21[0]*c21[0]*c21[0]
-##    c21y2 = c21[1]*c21[1]
-##    c22x2 = c22[0]*c22[0]
-##    c22x3 = c22[0]*c22[0]*c22[0]
-##    c22y2 = c22[1]*c22[1]
-##    c23x2 = c23[0]*c23[0]
-##    c23x3 = c23[0]*c23[0]*c23[0]
-##    c23y2 = c23[1]*c23[1]
-##    c23y3 = c23[1]*c23[1]*c23[1]
-##    # create degree 9 (10 coef) polynomial
-##    poly = [-c13x3*c23y3 + c13y3*c23x3 - 3*c13.x*c13y2*c23x2*c23.y + 3*c13x2*c13.y*c23.x*c23y2,
-##            -6*c13.x*c22.x*c13y2*c23.x*c23.y + 6*c13x2*c13.y*c22.y*c23.x*c23.y + 3*c22.x*c13y3*c23x2 -
-##                3*c13x3*c22.y*c23y2 - 3*c13.x*c13y2*c22.y*c23x2 + 3*c13x2*c22.x*c13.y*c23y2,
-##            -6*c21.x*c13.x*c13y2*c23.x*c23.y - 6*c13.x*c22.x*c13y2*c22.y*c23.x + 6*c13x2*c22.x*c13.y*c22.y*c23.y +
-##                3*c21.x*c13y3*c23x2 + 3*c22x2*c13y3*c23.x + 3*c21.x*c13x2*c13.y*c23y2 - 3*c13.x*c21.y*c13y2*c23x2 -
-##                3*c13.x*c22x2*c13y2*c23.y + c13x2*c13.y*c23.x*(6*c21.y*c23.y + 3*c22y2) + c13x3*(-c21.y*c23y2 -
-##                2*c22y2*c23.y - c23.y*(2*c21.y*c23.y + c22y2)),
-##            c11.x*c12.y*c13.x*c13.y*c23.x*c23.y - c11.y*c12.x*c13.x*c13.y*c23.x*c23.y + 6*c21.x*c22.x*c13y3*c23.x +
-##                3*c11.x*c12.x*c13.x*c13.y*c23y2 + 6*c10.x*c13.x*c13y2*c23.x*c23.y - 3*c11.x*c12.x*c13y2*c23.x*c23.y -
-##                3*c11.y*c12.y*c13.x*c13.y*c23x2 - 6*c10.y*c13x2*c13.y*c23.x*c23.y - 6*c20.x*c13.x*c13y2*c23.x*c23.y +
-##                3*c11.y*c12.y*c13x2*c23.x*c23.y - 2*c12.x*c12y2*c13.x*c23.x*c23.y - 6*c21.x*c13.x*c22.x*c13y2*c23.y -
-##                6*c21.x*c13.x*c13y2*c22.y*c23.x - 6*c13.x*c21.y*c22.x*c13y2*c23.x + 6*c21.x*c13x2*c13.y*c22.y*c23.y +
-##                2*c12x2*c12.y*c13.y*c23.x*c23.y + c22x3*c13y3 - 3*c10.x*c13y3*c23x2 + 3*c10.y*c13x3*c23y2 +
-##                3*c20.x*c13y3*c23x2 + c12y3*c13.x*c23x2 - c12x3*c13.y*c23y2 - 3*c10.x*c13x2*c13.y*c23y2 +
-##                3*c10.y*c13.x*c13y2*c23x2 - 2*c11.x*c12.y*c13x2*c23y2 + c11.x*c12.y*c13y2*c23x2 - c11.y*c12.x*c13x2*c23y2 +
-##                2*c11.y*c12.x*c13y2*c23x2 + 3*c20.x*c13x2*c13.y*c23y2 - c12.x*c12y2*c13.y*c23x2 -
-##                3*c20.y*c13.x*c13y2*c23x2 + c12x2*c12.y*c13.x*c23y2 - 3*c13.x*c22x2*c13y2*c22.y +
-##                c13x2*c13.y*c23.x*(6*c20.y*c23.y + 6*c21.y*c22.y) + c13x2*c22.x*c13.y*(6*c21.y*c23.y + 3*c22y2) +
-##                c13x3*(-2*c21.y*c22.y*c23.y - c20.y*c23y2 - c22.y*(2*c21.y*c23.y + c22y2) - c23.y*(2*c20.y*c23.y + 2*c21.y*c22.y)),
-##            6*c11.x*c12.x*c13.x*c13.y*c22.y*c23.y + c11.x*c12.y*c13.x*c22.x*c13.y*c23.y + c11.x*c12.y*c13.x*c13.y*c22.y*c23.x -
-##                c11.y*c12.x*c13.x*c22.x*c13.y*c23.y - c11.y*c12.x*c13.x*c13.y*c22.y*c23.x - 6*c11.y*c12.y*c13.x*c22.x*c13.y*c23.x -
-##                6*c10.x*c22.x*c13y3*c23.x + 6*c20.x*c22.x*c13y3*c23.x + 6*c10.y*c13x3*c22.y*c23.y + 2*c12y3*c13.x*c22.x*c23.x -
-##                2*c12x3*c13.y*c22.y*c23.y + 6*c10.x*c13.x*c22.x*c13y2*c23.y + 6*c10.x*c13.x*c13y2*c22.y*c23.x +
-##                6*c10.y*c13.x*c22.x*c13y2*c23.x - 3*c11.x*c12.x*c22.x*c13y2*c23.y - 3*c11.x*c12.x*c13y2*c22.y*c23.x +
-##                2*c11.x*c12.y*c22.x*c13y2*c23.x + 4*c11.y*c12.x*c22.x*c13y2*c23.x - 6*c10.x*c13x2*c13.y*c22.y*c23.y -
-##                6*c10.y*c13x2*c22.x*c13.y*c23.y - 6*c10.y*c13x2*c13.y*c22.y*c23.x - 4*c11.x*c12.y*c13x2*c22.y*c23.y -
-##                6*c20.x*c13.x*c22.x*c13y2*c23.y - 6*c20.x*c13.x*c13y2*c22.y*c23.x - 2*c11.y*c12.x*c13x2*c22.y*c23.y +
-##                3*c11.y*c12.y*c13x2*c22.x*c23.y + 3*c11.y*c12.y*c13x2*c22.y*c23.x - 2*c12.x*c12y2*c13.x*c22.x*c23.y -
-##                2*c12.x*c12y2*c13.x*c22.y*c23.x - 2*c12.x*c12y2*c22.x*c13.y*c23.x - 6*c20.y*c13.x*c22.x*c13y2*c23.x -
-##                6*c21.x*c13.x*c21.y*c13y2*c23.x - 6*c21.x*c13.x*c22.x*c13y2*c22.y + 6*c20.x*c13x2*c13.y*c22.y*c23.y +
-##                2*c12x2*c12.y*c13.x*c22.y*c23.y + 2*c12x2*c12.y*c22.x*c13.y*c23.y + 2*c12x2*c12.y*c13.y*c22.y*c23.x +
-##                3*c21.x*c22x2*c13y3 + 3*c21x2*c13y3*c23.x - 3*c13.x*c21.y*c22x2*c13y2 - 3*c21x2*c13.x*c13y2*c23.y +
-##                c13x2*c22.x*c13.y*(6*c20.y*c23.y + 6*c21.y*c22.y) + c13x2*c13.y*c23.x*(6*c20.y*c22.y + 3*c21y2) +
-##                c21.x*c13x2*c13.y*(6*c21.y*c23.y + 3*c22y2) + c13x3*(-2*c20.y*c22.y*c23.y - c23.y*(2*c20.y*c22.y + c21y2) -
-##                c21.y*(2*c21.y*c23.y + c22y2) - c22.y*(2*c20.y*c23.y + 2*c21.y*c22.y)),
-##            c11.x*c21.x*c12.y*c13.x*c13.y*c23.y + c11.x*c12.y*c13.x*c21.y*c13.y*c23.x + c11.x*c12.y*c13.x*c22.x*c13.y*c22.y -
-##                c11.y*c12.x*c21.x*c13.x*c13.y*c23.y - c11.y*c12.x*c13.x*c21.y*c13.y*c23.x - c11.y*c12.x*c13.x*c22.x*c13.y*c22.y -
-##                6*c11.y*c21.x*c12.y*c13.x*c13.y*c23.x - 6*c10.x*c21.x*c13y3*c23.x + 6*c20.x*c21.x*c13y3*c23.x +
-##                2*c21.x*c12y3*c13.x*c23.x + 6*c10.x*c21.x*c13.x*c13y2*c23.y + 6*c10.x*c13.x*c21.y*c13y2*c23.x +
-##                6*c10.x*c13.x*c22.x*c13y2*c22.y + 6*c10.y*c21.x*c13.x*c13y2*c23.x - 3*c11.x*c12.x*c21.x*c13y2*c23.y -
-##                3*c11.x*c12.x*c21.y*c13y2*c23.x - 3*c11.x*c12.x*c22.x*c13y2*c22.y + 2*c11.x*c21.x*c12.y*c13y2*c23.x +
-##                4*c11.y*c12.x*c21.x*c13y2*c23.x - 6*c10.y*c21.x*c13x2*c13.y*c23.y - 6*c10.y*c13x2*c21.y*c13.y*c23.x -
-##                6*c10.y*c13x2*c22.x*c13.y*c22.y - 6*c20.x*c21.x*c13.x*c13y2*c23.y - 6*c20.x*c13.x*c21.y*c13y2*c23.x -
-##                6*c20.x*c13.x*c22.x*c13y2*c22.y + 3*c11.y*c21.x*c12.y*c13x2*c23.y - 3*c11.y*c12.y*c13.x*c22x2*c13.y +
-##                3*c11.y*c12.y*c13x2*c21.y*c23.x + 3*c11.y*c12.y*c13x2*c22.x*c22.y - 2*c12.x*c21.x*c12y2*c13.x*c23.y -
-##                2*c12.x*c21.x*c12y2*c13.y*c23.x - 2*c12.x*c12y2*c13.x*c21.y*c23.x - 2*c12.x*c12y2*c13.x*c22.x*c22.y -
-##                6*c20.y*c21.x*c13.x*c13y2*c23.x - 6*c21.x*c13.x*c21.y*c22.x*c13y2 + 6*c20.y*c13x2*c21.y*c13.y*c23.x +
-##                2*c12x2*c21.x*c12.y*c13.y*c23.y + 2*c12x2*c12.y*c21.y*c13.y*c23.x + 2*c12x2*c12.y*c22.x*c13.y*c22.y -
-##                3*c10.x*c22x2*c13y3 + 3*c20.x*c22x2*c13y3 + 3*c21x2*c22.x*c13y3 + c12y3*c13.x*c22x2 +
-##                3*c10.y*c13.x*c22x2*c13y2 + c11.x*c12.y*c22x2*c13y2 + 2*c11.y*c12.x*c22x2*c13y2 -
-##                c12.x*c12y2*c22x2*c13.y - 3*c20.y*c13.x*c22x2*c13y2 - 3*c21x2*c13.x*c13y2*c22.y +
-##                c12x2*c12.y*c13.x*(2*c21.y*c23.y + c22y2) + c11.x*c12.x*c13.x*c13.y*(6*c21.y*c23.y + 3*c22y2) +
-##                c21.x*c13x2*c13.y*(6*c20.y*c23.y + 6*c21.y*c22.y) + c12x3*c13.y*(-2*c21.y*c23.y - c22y2) +
-##                c10.y*c13x3*(6*c21.y*c23.y + 3*c22y2) + c11.y*c12.x*c13x2*(-2*c21.y*c23.y - c22y2) +
-##                c11.x*c12.y*c13x2*(-4*c21.y*c23.y - 2*c22y2) + c10.x*c13x2*c13.y*(-6*c21.y*c23.y - 3*c22y2) +
-##                c13x2*c22.x*c13.y*(6*c20.y*c22.y + 3*c21y2) + c20.x*c13x2*c13.y*(6*c21.y*c23.y + 3*c22y2) +
-##                c13x3*(-2*c20.y*c21.y*c23.y - c22.y*(2*c20.y*c22.y + c21y2) - c20.y*(2*c21.y*c23.y + c22y2) -
-##                c21.y*(2*c20.y*c23.y + 2*c21.y*c22.y)),
-##            -c10.x*c11.x*c12.y*c13.x*c13.y*c23.y + c10.x*c11.y*c12.x*c13.x*c13.y*c23.y + 6*c10.x*c11.y*c12.y*c13.x*c13.y*c23.x -
-##                6*c10.y*c11.x*c12.x*c13.x*c13.y*c23.y - c10.y*c11.x*c12.y*c13.x*c13.y*c23.x + c10.y*c11.y*c12.x*c13.x*c13.y*c23.x +
-##                c11.x*c11.y*c12.x*c12.y*c13.x*c23.y - c11.x*c11.y*c12.x*c12.y*c13.y*c23.x + c11.x*c20.x*c12.y*c13.x*c13.y*c23.y +
-##                c11.x*c20.y*c12.y*c13.x*c13.y*c23.x + c11.x*c21.x*c12.y*c13.x*c13.y*c22.y + c11.x*c12.y*c13.x*c21.y*c22.x*c13.y -
-##                c20.x*c11.y*c12.x*c13.x*c13.y*c23.y - 6*c20.x*c11.y*c12.y*c13.x*c13.y*c23.x - c11.y*c12.x*c20.y*c13.x*c13.y*c23.x -
-##                c11.y*c12.x*c21.x*c13.x*c13.y*c22.y - c11.y*c12.x*c13.x*c21.y*c22.x*c13.y - 6*c11.y*c21.x*c12.y*c13.x*c22.x*c13.y -
-##                6*c10.x*c20.x*c13y3*c23.x - 6*c10.x*c21.x*c22.x*c13y3 - 2*c10.x*c12y3*c13.x*c23.x + 6*c20.x*c21.x*c22.x*c13y3 +
-##                2*c20.x*c12y3*c13.x*c23.x + 2*c21.x*c12y3*c13.x*c22.x + 2*c10.y*c12x3*c13.y*c23.y - 6*c10.x*c10.y*c13.x*c13y2*c23.x +
-##                3*c10.x*c11.x*c12.x*c13y2*c23.y - 2*c10.x*c11.x*c12.y*c13y2*c23.x - 4*c10.x*c11.y*c12.x*c13y2*c23.x +
-##                3*c10.y*c11.x*c12.x*c13y2*c23.x + 6*c10.x*c10.y*c13x2*c13.y*c23.y + 6*c10.x*c20.x*c13.x*c13y2*c23.y -
-##                3*c10.x*c11.y*c12.y*c13x2*c23.y + 2*c10.x*c12.x*c12y2*c13.x*c23.y + 2*c10.x*c12.x*c12y2*c13.y*c23.x +
-##                6*c10.x*c20.y*c13.x*c13y2*c23.x + 6*c10.x*c21.x*c13.x*c13y2*c22.y + 6*c10.x*c13.x*c21.y*c22.x*c13y2 +
-##                4*c10.y*c11.x*c12.y*c13x2*c23.y + 6*c10.y*c20.x*c13.x*c13y2*c23.x + 2*c10.y*c11.y*c12.x*c13x2*c23.y -
-##                3*c10.y*c11.y*c12.y*c13x2*c23.x + 2*c10.y*c12.x*c12y2*c13.x*c23.x + 6*c10.y*c21.x*c13.x*c22.x*c13y2 -
-##                3*c11.x*c20.x*c12.x*c13y2*c23.y + 2*c11.x*c20.x*c12.y*c13y2*c23.x + c11.x*c11.y*c12y2*c13.x*c23.x -
-##                3*c11.x*c12.x*c20.y*c13y2*c23.x - 3*c11.x*c12.x*c21.x*c13y2*c22.y - 3*c11.x*c12.x*c21.y*c22.x*c13y2 +
-##                2*c11.x*c21.x*c12.y*c22.x*c13y2 + 4*c20.x*c11.y*c12.x*c13y2*c23.x + 4*c11.y*c12.x*c21.x*c22.x*c13y2 -
-##                2*c10.x*c12x2*c12.y*c13.y*c23.y - 6*c10.y*c20.x*c13x2*c13.y*c23.y - 6*c10.y*c20.y*c13x2*c13.y*c23.x -
-##                6*c10.y*c21.x*c13x2*c13.y*c22.y - 2*c10.y*c12x2*c12.y*c13.x*c23.y - 2*c10.y*c12x2*c12.y*c13.y*c23.x -
-##                6*c10.y*c13x2*c21.y*c22.x*c13.y - c11.x*c11.y*c12x2*c13.y*c23.y - 2*c11.x*c11y2*c13.x*c13.y*c23.x +
-##                3*c20.x*c11.y*c12.y*c13x2*c23.y - 2*c20.x*c12.x*c12y2*c13.x*c23.y - 2*c20.x*c12.x*c12y2*c13.y*c23.x -
-##                6*c20.x*c20.y*c13.x*c13y2*c23.x - 6*c20.x*c21.x*c13.x*c13y2*c22.y - 6*c20.x*c13.x*c21.y*c22.x*c13y2 +
-##                3*c11.y*c20.y*c12.y*c13x2*c23.x + 3*c11.y*c21.x*c12.y*c13x2*c22.y + 3*c11.y*c12.y*c13x2*c21.y*c22.x -
-##                2*c12.x*c20.y*c12y2*c13.x*c23.x - 2*c12.x*c21.x*c12y2*c13.x*c22.y - 2*c12.x*c21.x*c12y2*c22.x*c13.y -
-##                2*c12.x*c12y2*c13.x*c21.y*c22.x - 6*c20.y*c21.x*c13.x*c22.x*c13y2 - c11y2*c12.x*c12.y*c13.x*c23.x +
-##                2*c20.x*c12x2*c12.y*c13.y*c23.y + 6*c20.y*c13x2*c21.y*c22.x*c13.y + 2*c11x2*c11.y*c13.x*c13.y*c23.y +
-##                c11x2*c12.x*c12.y*c13.y*c23.y + 2*c12x2*c20.y*c12.y*c13.y*c23.x + 2*c12x2*c21.x*c12.y*c13.y*c22.y +
-##                2*c12x2*c12.y*c21.y*c22.x*c13.y + c21x3*c13y3 + 3*c10x2*c13y3*c23.x - 3*c10y2*c13x3*c23.y +
-##                3*c20x2*c13y3*c23.x + c11y3*c13x2*c23.x - c11x3*c13y2*c23.y - c11.x*c11y2*c13x2*c23.y +
-##                c11x2*c11.y*c13y2*c23.x - 3*c10x2*c13.x*c13y2*c23.y + 3*c10y2*c13x2*c13.y*c23.x - c11x2*c12y2*c13.x*c23.y +
-##                c11y2*c12x2*c13.y*c23.x - 3*c21x2*c13.x*c21.y*c13y2 - 3*c20x2*c13.x*c13y2*c23.y + 3*c20y2*c13x2*c13.y*c23.x +
-##                c11.x*c12.x*c13.x*c13.y*(6*c20.y*c23.y + 6*c21.y*c22.y) + c12x3*c13.y*(-2*c20.y*c23.y - 2*c21.y*c22.y) +
-##                c10.y*c13x3*(6*c20.y*c23.y + 6*c21.y*c22.y) + c11.y*c12.x*c13x2*(-2*c20.y*c23.y - 2*c21.y*c22.y) +
-##                c12x2*c12.y*c13.x*(2*c20.y*c23.y + 2*c21.y*c22.y) + c11.x*c12.y*c13x2*(-4*c20.y*c23.y - 4*c21.y*c22.y) +
-##                c10.x*c13x2*c13.y*(-6*c20.y*c23.y - 6*c21.y*c22.y) + c20.x*c13x2*c13.y*(6*c20.y*c23.y + 6*c21.y*c22.y) +
-##                c21.x*c13x2*c13.y*(6*c20.y*c22.y + 3*c21y2) + c13x3*(-2*c20.y*c21.y*c22.y - c20y2*c23.y -
-##                c21.y*(2*c20.y*c22.y + c21y2) - c20.y*(2*c20.y*c23.y + 2*c21.y*c22.y)),
-##            -c10.x*c11.x*c12.y*c13.x*c13.y*c22.y + c10.x*c11.y*c12.x*c13.x*c13.y*c22.y + 6*c10.x*c11.y*c12.y*c13.x*c22.x*c13.y -
-##                6*c10.y*c11.x*c12.x*c13.x*c13.y*c22.y - c10.y*c11.x*c12.y*c13.x*c22.x*c13.y + c10.y*c11.y*c12.x*c13.x*c22.x*c13.y +
-##                c11.x*c11.y*c12.x*c12.y*c13.x*c22.y - c11.x*c11.y*c12.x*c12.y*c22.x*c13.y + c11.x*c20.x*c12.y*c13.x*c13.y*c22.y +
-##                c11.x*c20.y*c12.y*c13.x*c22.x*c13.y + c11.x*c21.x*c12.y*c13.x*c21.y*c13.y - c20.x*c11.y*c12.x*c13.x*c13.y*c22.y -
-##                6*c20.x*c11.y*c12.y*c13.x*c22.x*c13.y - c11.y*c12.x*c20.y*c13.x*c22.x*c13.y - c11.y*c12.x*c21.x*c13.x*c21.y*c13.y -
-##                6*c10.x*c20.x*c22.x*c13y3 - 2*c10.x*c12y3*c13.x*c22.x + 2*c20.x*c12y3*c13.x*c22.x + 2*c10.y*c12x3*c13.y*c22.y -
-##                6*c10.x*c10.y*c13.x*c22.x*c13y2 + 3*c10.x*c11.x*c12.x*c13y2*c22.y - 2*c10.x*c11.x*c12.y*c22.x*c13y2 -
-##                4*c10.x*c11.y*c12.x*c22.x*c13y2 + 3*c10.y*c11.x*c12.x*c22.x*c13y2 + 6*c10.x*c10.y*c13x2*c13.y*c22.y +
-##                6*c10.x*c20.x*c13.x*c13y2*c22.y - 3*c10.x*c11.y*c12.y*c13x2*c22.y + 2*c10.x*c12.x*c12y2*c13.x*c22.y +
-##                2*c10.x*c12.x*c12y2*c22.x*c13.y + 6*c10.x*c20.y*c13.x*c22.x*c13y2 + 6*c10.x*c21.x*c13.x*c21.y*c13y2 +
-##                4*c10.y*c11.x*c12.y*c13x2*c22.y + 6*c10.y*c20.x*c13.x*c22.x*c13y2 + 2*c10.y*c11.y*c12.x*c13x2*c22.y -
-##                3*c10.y*c11.y*c12.y*c13x2*c22.x + 2*c10.y*c12.x*c12y2*c13.x*c22.x - 3*c11.x*c20.x*c12.x*c13y2*c22.y +
-##                2*c11.x*c20.x*c12.y*c22.x*c13y2 + c11.x*c11.y*c12y2*c13.x*c22.x - 3*c11.x*c12.x*c20.y*c22.x*c13y2 -
-##                3*c11.x*c12.x*c21.x*c21.y*c13y2 + 4*c20.x*c11.y*c12.x*c22.x*c13y2 - 2*c10.x*c12x2*c12.y*c13.y*c22.y -
-##                6*c10.y*c20.x*c13x2*c13.y*c22.y - 6*c10.y*c20.y*c13x2*c22.x*c13.y - 6*c10.y*c21.x*c13x2*c21.y*c13.y -
-##                2*c10.y*c12x2*c12.y*c13.x*c22.y - 2*c10.y*c12x2*c12.y*c22.x*c13.y - c11.x*c11.y*c12x2*c13.y*c22.y -
-##                2*c11.x*c11y2*c13.x*c22.x*c13.y + 3*c20.x*c11.y*c12.y*c13x2*c22.y - 2*c20.x*c12.x*c12y2*c13.x*c22.y -
-##                2*c20.x*c12.x*c12y2*c22.x*c13.y - 6*c20.x*c20.y*c13.x*c22.x*c13y2 - 6*c20.x*c21.x*c13.x*c21.y*c13y2 +
-##                3*c11.y*c20.y*c12.y*c13x2*c22.x + 3*c11.y*c21.x*c12.y*c13x2*c21.y - 2*c12.x*c20.y*c12y2*c13.x*c22.x -
-##                2*c12.x*c21.x*c12y2*c13.x*c21.y - c11y2*c12.x*c12.y*c13.x*c22.x + 2*c20.x*c12x2*c12.y*c13.y*c22.y -
-##                3*c11.y*c21x2*c12.y*c13.x*c13.y + 6*c20.y*c21.x*c13x2*c21.y*c13.y + 2*c11x2*c11.y*c13.x*c13.y*c22.y +
-##                c11x2*c12.x*c12.y*c13.y*c22.y + 2*c12x2*c20.y*c12.y*c22.x*c13.y + 2*c12x2*c21.x*c12.y*c21.y*c13.y -
-##                3*c10.x*c21x2*c13y3 + 3*c20.x*c21x2*c13y3 + 3*c10x2*c22.x*c13y3 - 3*c10y2*c13x3*c22.y + 3*c20x2*c22.x*c13y3 +
-##                c21x2*c12y3*c13.x + c11y3*c13x2*c22.x - c11x3*c13y2*c22.y + 3*c10.y*c21x2*c13.x*c13y2 -
-##                c11.x*c11y2*c13x2*c22.y + c11.x*c21x2*c12.y*c13y2 + 2*c11.y*c12.x*c21x2*c13y2 + c11x2*c11.y*c22.x*c13y2 -
-##                c12.x*c21x2*c12y2*c13.y - 3*c20.y*c21x2*c13.x*c13y2 - 3*c10x2*c13.x*c13y2*c22.y + 3*c10y2*c13x2*c22.x*c13.y -
-##                c11x2*c12y2*c13.x*c22.y + c11y2*c12x2*c22.x*c13.y - 3*c20x2*c13.x*c13y2*c22.y + 3*c20y2*c13x2*c22.x*c13.y +
-##                c12x2*c12.y*c13.x*(2*c20.y*c22.y + c21y2) + c11.x*c12.x*c13.x*c13.y*(6*c20.y*c22.y + 3*c21y2) +
-##                c12x3*c13.y*(-2*c20.y*c22.y - c21y2) + c10.y*c13x3*(6*c20.y*c22.y + 3*c21y2) +
-##                c11.y*c12.x*c13x2*(-2*c20.y*c22.y - c21y2) + c11.x*c12.y*c13x2*(-4*c20.y*c22.y - 2*c21y2) +
-##                c10.x*c13x2*c13.y*(-6*c20.y*c22.y - 3*c21y2) + c20.x*c13x2*c13.y*(6*c20.y*c22.y + 3*c21y2) +
-##                c13x3*(-2*c20.y*c21y2 - c20y2*c22.y - c20.y*(2*c20.y*c22.y + c21y2)),
-##            -c10.x*c11.x*c12.y*c13.x*c21.y*c13.y + c10.x*c11.y*c12.x*c13.x*c21.y*c13.y + 6*c10.x*c11.y*c21.x*c12.y*c13.x*c13.y -
-##                6*c10.y*c11.x*c12.x*c13.x*c21.y*c13.y - c10.y*c11.x*c21.x*c12.y*c13.x*c13.y + c10.y*c11.y*c12.x*c21.x*c13.x*c13.y -
-##                c11.x*c11.y*c12.x*c21.x*c12.y*c13.y + c11.x*c11.y*c12.x*c12.y*c13.x*c21.y + c11.x*c20.x*c12.y*c13.x*c21.y*c13.y +
-##                6*c11.x*c12.x*c20.y*c13.x*c21.y*c13.y + c11.x*c20.y*c21.x*c12.y*c13.x*c13.y - c20.x*c11.y*c12.x*c13.x*c21.y*c13.y -
-##                6*c20.x*c11.y*c21.x*c12.y*c13.x*c13.y - c11.y*c12.x*c20.y*c21.x*c13.x*c13.y - 6*c10.x*c20.x*c21.x*c13y3 -
-##                2*c10.x*c21.x*c12y3*c13.x + 6*c10.y*c20.y*c13x3*c21.y + 2*c20.x*c21.x*c12y3*c13.x + 2*c10.y*c12x3*c21.y*c13.y -
-##                2*c12x3*c20.y*c21.y*c13.y - 6*c10.x*c10.y*c21.x*c13.x*c13y2 + 3*c10.x*c11.x*c12.x*c21.y*c13y2 -
-##                2*c10.x*c11.x*c21.x*c12.y*c13y2 - 4*c10.x*c11.y*c12.x*c21.x*c13y2 + 3*c10.y*c11.x*c12.x*c21.x*c13y2 +
-##                6*c10.x*c10.y*c13x2*c21.y*c13.y + 6*c10.x*c20.x*c13.x*c21.y*c13y2 - 3*c10.x*c11.y*c12.y*c13x2*c21.y +
-##                2*c10.x*c12.x*c21.x*c12y2*c13.y + 2*c10.x*c12.x*c12y2*c13.x*c21.y + 6*c10.x*c20.y*c21.x*c13.x*c13y2 +
-##                4*c10.y*c11.x*c12.y*c13x2*c21.y + 6*c10.y*c20.x*c21.x*c13.x*c13y2 + 2*c10.y*c11.y*c12.x*c13x2*c21.y -
-##                3*c10.y*c11.y*c21.x*c12.y*c13x2 + 2*c10.y*c12.x*c21.x*c12y2*c13.x - 3*c11.x*c20.x*c12.x*c21.y*c13y2 +
-##                2*c11.x*c20.x*c21.x*c12.y*c13y2 + c11.x*c11.y*c21.x*c12y2*c13.x - 3*c11.x*c12.x*c20.y*c21.x*c13y2 +
-##                4*c20.x*c11.y*c12.x*c21.x*c13y2 - 6*c10.x*c20.y*c13x2*c21.y*c13.y - 2*c10.x*c12x2*c12.y*c21.y*c13.y -
-##                6*c10.y*c20.x*c13x2*c21.y*c13.y - 6*c10.y*c20.y*c21.x*c13x2*c13.y - 2*c10.y*c12x2*c21.x*c12.y*c13.y -
-##                2*c10.y*c12x2*c12.y*c13.x*c21.y - c11.x*c11.y*c12x2*c21.y*c13.y - 4*c11.x*c20.y*c12.y*c13x2*c21.y -
-##                2*c11.x*c11y2*c21.x*c13.x*c13.y + 3*c20.x*c11.y*c12.y*c13x2*c21.y - 2*c20.x*c12.x*c21.x*c12y2*c13.y -
-##                2*c20.x*c12.x*c12y2*c13.x*c21.y - 6*c20.x*c20.y*c21.x*c13.x*c13y2 - 2*c11.y*c12.x*c20.y*c13x2*c21.y +
-##                3*c11.y*c20.y*c21.x*c12.y*c13x2 - 2*c12.x*c20.y*c21.x*c12y2*c13.x - c11y2*c12.x*c21.x*c12.y*c13.x +
-##                6*c20.x*c20.y*c13x2*c21.y*c13.y + 2*c20.x*c12x2*c12.y*c21.y*c13.y + 2*c11x2*c11.y*c13.x*c21.y*c13.y +
-##                c11x2*c12.x*c12.y*c21.y*c13.y + 2*c12x2*c20.y*c21.x*c12.y*c13.y + 2*c12x2*c20.y*c12.y*c13.x*c21.y +
-##                3*c10x2*c21.x*c13y3 - 3*c10y2*c13x3*c21.y + 3*c20x2*c21.x*c13y3 + c11y3*c21.x*c13x2 - c11x3*c21.y*c13y2 -
-##                3*c20y2*c13x3*c21.y - c11.x*c11y2*c13x2*c21.y + c11x2*c11.y*c21.x*c13y2 - 3*c10x2*c13.x*c21.y*c13y2 +
-##                3*c10y2*c21.x*c13x2*c13.y - c11x2*c12y2*c13.x*c21.y + c11y2*c12x2*c21.x*c13.y - 3*c20x2*c13.x*c21.y*c13y2 +
-##                3*c20y2*c21.x*c13x2*c13.y,
-##            c10.x*c10.y*c11.x*c12.y*c13.x*c13.y - c10.x*c10.y*c11.y*c12.x*c13.x*c13.y + c10.x*c11.x*c11.y*c12.x*c12.y*c13.y -
-##                c10.y*c11.x*c11.y*c12.x*c12.y*c13.x - c10.x*c11.x*c20.y*c12.y*c13.x*c13.y + 6*c10.x*c20.x*c11.y*c12.y*c13.x*c13.y +
-##                c10.x*c11.y*c12.x*c20.y*c13.x*c13.y - c10.y*c11.x*c20.x*c12.y*c13.x*c13.y - 6*c10.y*c11.x*c12.x*c20.y*c13.x*c13.y +
-##                c10.y*c20.x*c11.y*c12.x*c13.x*c13.y - c11.x*c20.x*c11.y*c12.x*c12.y*c13.y + c11.x*c11.y*c12.x*c20.y*c12.y*c13.x +
-##                c11.x*c20.x*c20.y*c12.y*c13.x*c13.y - c20.x*c11.y*c12.x*c20.y*c13.x*c13.y - 2*c10.x*c20.x*c12y3*c13.x +
-##                2*c10.y*c12x3*c20.y*c13.y - 3*c10.x*c10.y*c11.x*c12.x*c13y2 - 6*c10.x*c10.y*c20.x*c13.x*c13y2 +
-##                3*c10.x*c10.y*c11.y*c12.y*c13x2 - 2*c10.x*c10.y*c12.x*c12y2*c13.x - 2*c10.x*c11.x*c20.x*c12.y*c13y2 -
-##                c10.x*c11.x*c11.y*c12y2*c13.x + 3*c10.x*c11.x*c12.x*c20.y*c13y2 - 4*c10.x*c20.x*c11.y*c12.x*c13y2 +
-##                3*c10.y*c11.x*c20.x*c12.x*c13y2 + 6*c10.x*c10.y*c20.y*c13x2*c13.y + 2*c10.x*c10.y*c12x2*c12.y*c13.y +
-##                2*c10.x*c11.x*c11y2*c13.x*c13.y + 2*c10.x*c20.x*c12.x*c12y2*c13.y + 6*c10.x*c20.x*c20.y*c13.x*c13y2 -
-##                3*c10.x*c11.y*c20.y*c12.y*c13x2 + 2*c10.x*c12.x*c20.y*c12y2*c13.x + c10.x*c11y2*c12.x*c12.y*c13.x +
-##                c10.y*c11.x*c11.y*c12x2*c13.y + 4*c10.y*c11.x*c20.y*c12.y*c13x2 - 3*c10.y*c20.x*c11.y*c12.y*c13x2 +
-##                2*c10.y*c20.x*c12.x*c12y2*c13.x + 2*c10.y*c11.y*c12.x*c20.y*c13x2 + c11.x*c20.x*c11.y*c12y2*c13.x -
-##                3*c11.x*c20.x*c12.x*c20.y*c13y2 - 2*c10.x*c12x2*c20.y*c12.y*c13.y - 6*c10.y*c20.x*c20.y*c13x2*c13.y -
-##                2*c10.y*c20.x*c12x2*c12.y*c13.y - 2*c10.y*c11x2*c11.y*c13.x*c13.y - c10.y*c11x2*c12.x*c12.y*c13.y -
-##                2*c10.y*c12x2*c20.y*c12.y*c13.x - 2*c11.x*c20.x*c11y2*c13.x*c13.y - c11.x*c11.y*c12x2*c20.y*c13.y +
-##                3*c20.x*c11.y*c20.y*c12.y*c13x2 - 2*c20.x*c12.x*c20.y*c12y2*c13.x - c20.x*c11y2*c12.x*c12.y*c13.x +
-##                3*c10y2*c11.x*c12.x*c13.x*c13.y + 3*c11.x*c12.x*c20y2*c13.x*c13.y + 2*c20.x*c12x2*c20.y*c12.y*c13.y -
-##                3*c10x2*c11.y*c12.y*c13.x*c13.y + 2*c11x2*c11.y*c20.y*c13.x*c13.y + c11x2*c12.x*c20.y*c12.y*c13.y -
-##                3*c20x2*c11.y*c12.y*c13.x*c13.y - c10x3*c13y3 + c10y3*c13x3 + c20x3*c13y3 - c20y3*c13x3 -
-##                3*c10.x*c20x2*c13y3 - c10.x*c11y3*c13x2 + 3*c10x2*c20.x*c13y3 + c10.y*c11x3*c13y2 +
-##                3*c10.y*c20y2*c13x3 + c20.x*c11y3*c13x2 + c10x2*c12y3*c13.x - 3*c10y2*c20.y*c13x3 - c10y2*c12x3*c13.y +
-##                c20x2*c12y3*c13.x - c11x3*c20.y*c13y2 - c12x3*c20y2*c13.y - c10.x*c11x2*c11.y*c13y2 +
-##                c10.y*c11.x*c11y2*c13x2 - 3*c10.x*c10y2*c13x2*c13.y - c10.x*c11y2*c12x2*c13.y + c10.y*c11x2*c12y2*c13.x -
-##                c11.x*c11y2*c20.y*c13x2 + 3*c10x2*c10.y*c13.x*c13y2 + c10x2*c11.x*c12.y*c13y2 +
-##                2*c10x2*c11.y*c12.x*c13y2 - 2*c10y2*c11.x*c12.y*c13x2 - c10y2*c11.y*c12.x*c13x2 + c11x2*c20.x*c11.y*c13y2 -
-##                3*c10.x*c20y2*c13x2*c13.y + 3*c10.y*c20x2*c13.x*c13y2 + c11.x*c20x2*c12.y*c13y2 - 2*c11.x*c20y2*c12.y*c13x2 +
-##                c20.x*c11y2*c12x2*c13.y - c11.y*c12.x*c20y2*c13x2 - c10x2*c12.x*c12y2*c13.y - 3*c10x2*c20.y*c13.x*c13y2 +
-##                3*c10y2*c20.x*c13x2*c13.y + c10y2*c12x2*c12.y*c13.x - c11x2*c20.y*c12y2*c13.x + 2*c20x2*c11.y*c12.x*c13y2 +
-##                3*c20.x*c20y2*c13x2*c13.y - c20x2*c12.x*c12y2*c13.y - 3*c20x2*c20.y*c13.x*c13y2 + c12x2*c20y2*c12.y*c13.x
-##            ]
-##    roots = poly.getRootsInInterval(0,1);
-##    #
-##    for i in range(len(roots)): #( var i = 0; i < roots.length; i++ ) {
-##        s = roots[i]
-##        xRoots = [c13.x,
-##                  c12.x,
-##                  c11.x,
-##                  c10.x - c20.x - s*c21.x - s*s*c22.x - s*s*s*c23.x
-##                  ].getRoots()
-##        yRoots = [c13.y,
-##                  c12.y,
-##                  c11.y,
-##                  c10.y - c20.y - s*c21.y - s*s*c22.y - s*s*s*c23.y
-##                  ].getRoots()
-##
-##        if ( len(xRoots) > 0 and len(yRoots) > 0 ):
-##            TOLERANCE = 1e-4;
-##            #label:checkRoots
-##            #
-##            for j in range(len(xRoots): #( var j = 0; j < xRoots.length; j++ ) {
-##                xRoot = xRoots[j]
-##                #
-##                if ( 0 <= xRoot and xRoot <= 1 ) {
-##                    for k in range(len(yRoots)): #( var k = 0; k < yRoots.length; k++ ) {
-##                        if ( math.abs( xRoot - yRoots[k] ) < TOLERANCE ):
-##                            result.points.push( c23.multiply(s*s*s).add(c22.multiply(s*s).add(c21.multiply(s).add(c20))))
-##                            break #checkRoots;
-##    #
-##    if ( result.points.length > 0 ): result.status = "Intersection";
-##    return result
-
-
-
-
-    
-    
-###
 class LasercutJigsaw(inkex.Effect):
 
     def __init__(self):
         inkex.Effect.__init__(self)
-        self.arg_parser.add_argument("-x", "--width",
-                        action="store", type=float,
-                        dest="width", default=50.0,
-                        help="The Box Width - in the X dimension")
-        self.arg_parser.add_argument("-y", "--height",
-                        action="store", type=float,
-                        dest="height", default=30.0,
-                        help="The Box Height - in the Y dimension")
-        self.arg_parser.add_argument("-u", "--units",
-                        action="store", type=str,
-                        dest="units", default="cm",
-                        help="The unit of the box dimensions")
-        self.arg_parser.add_argument("-w", "--pieces_W",
-                        action="store", type=int,
-                        dest="pieces_W", default=11,
-                        help="How many pieces across")
-        self.arg_parser.add_argument("-z", "--pieces_H",
-                        action="store", type=int,
-                        dest="pieces_H", default=11,
-                        help="How many pieces down")
-        self.arg_parser.add_argument("-k", "--notch_percent",
-                        action="store", type=float,
-                        dest="notch_percent", default=0.0,
-                        help="Notch relative size. 0 to 1. 0.15 is good")
-        self.arg_parser.add_argument("-r", "--rand",
-                        action="store", type=float,
-                        dest="rand", default=0.1,
-                        help="Amount to perturb the basic piece grid.")
-        self.arg_parser.add_argument("-i", "--innerradius",
-                        action="store", type=float,
-                        dest="innerradius", default=5.0,
-                        help="0 implies square corners")
-        self.arg_parser.add_argument("-b", "--border",
-                        action="store", type=inkex.Boolean,
-                        dest="border", default=False,
-                        help="Add Outer Surround")
-        self.arg_parser.add_argument("-a", "--borderwidth",
-                        action="store", type=float,
-                        dest="borderwidth", default=10.0,
-                        help="Size of external surrounding border.")
-        self.arg_parser.add_argument("-o", "--outerradius",
-                        action="store", type=float,
-                        dest="outerradius", default=5.0,
-                        help="0 implies square corners")
-        self.arg_parser.add_argument("-p", "--pack",
-                        action="store", type=str,
-                        dest="pack", default="Below",
-                        help="Where to place backing piece on page")
-        self.arg_parser.add_argument("-g", "--use_seed",
-                        action="store", type=inkex.Boolean,
-                        dest="use_seed", default=False,
-                        help="Use the kerf value as the drawn line width")
-        self.arg_parser.add_argument("-s", "--seed",
-                        action="store", type=int,
-                        dest="seed", default=12345,
-                        help="Random seed for repeatability")
-        self.arg_parser.add_argument("-j", "--pieces",
-                        action="store", type=inkex.Boolean,
-                        dest="pieces", default=False,
-                        help="Make extra pieces for manual boolean separation.")
-        self.arg_parser.add_argument("-n", "--smooth_edges",
-                        action="store", type=inkex.Boolean,
-                        dest="smooth_edges", default=False,
-                        help="Allow pieces with smooth edges.")
-        self.arg_parser.add_argument("-f", "--noknob_frequency",
-                        action="store", type=float,
-                        dest="noknob_frequency", default=10,
-                        help="Percentage of smooth-sided edges.")						
+        self.arg_parser.add_argument("-x", "--width", type=float, default=50.0, help="The Box Width - in the X dimension")
+        self.arg_parser.add_argument("-y", "--height", type=float, default=30.0, help="The Box Height - in the Y dimension")
+        self.arg_parser.add_argument("-u", "--units", default="cm", help="The unit of the box dimensions")
+        self.arg_parser.add_argument("-w", "--pieces_W", type=int, default=11, help="How many pieces across")
+        self.arg_parser.add_argument("-z", "--pieces_H", type=int, default=11, help="How many pieces down")
+        self.arg_parser.add_argument("-k", "--notch_percent", type=float, default=0.0, help="Notch relative size. 0 to 1. 0.15 is good")
+        self.arg_parser.add_argument("-r", "--rand", type=float, default=0.1, help="Amount to perturb the basic piece grid.")
+        self.arg_parser.add_argument("-i", "--innerradius", type=float, default=5.0, help="0 implies square corners")
+        self.arg_parser.add_argument("-b", "--border", type=inkex.Boolean, default=False, help="Add Outer Surround")
+        self.arg_parser.add_argument("-a", "--borderwidth", type=float, default=10.0, help="Size of external surrounding border.")
+        self.arg_parser.add_argument("-o", "--outerradius", type=float, default=5.0, help="0 implies square corners")
+        self.arg_parser.add_argument("-p", "--pack", type=str, default="Below", help="Where to place backing piece on page")
+        self.arg_parser.add_argument("-g", "--use_seed", type=inkex.Boolean, default=False, help="Use the kerf value as the drawn line width")
+        self.arg_parser.add_argument("-s", "--seed", type=int, default=12345, help="Random seed for repeatability")
+        self.arg_parser.add_argument("-j", "--pieces", type=inkex.Boolean, default=False, help="Make extra pieces for manual boolean separation.")
+        self.arg_parser.add_argument("-n", "--smooth_edges", type=inkex.Boolean, default=False, help="Allow pieces with smooth edges.")
+        self.arg_parser.add_argument("-f", "--noknob_frequency", type=float, default=10, help="Percentage of smooth-sided edges.")                              
         # dummy for the doc tab - which is named
-        self.arg_parser.add_argument("--tab",
-                        action="store", type=str, 
-                        dest="tab", default="use",
-                        help="The selected UI-tab when OK was pressed")
+        self.arg_parser.add_argument("--tab", default="use", help="The selected UI-tab when OK was pressed")
         # internal useful variables
         self.stroke_width = 0.1 # default for visiblity
         self.line_style = {'stroke': '#0000FF', # Ponoko blue
@@ -666,9 +196,8 @@ class LasercutJigsaw(inkex.Effect):
         #
         clist.extend([width, starty, width, starty]) # doubled up at end for smooth curve
         line_path.append(['C',clist])
-        #sys.stderr.write("%s\n"% line_path)
         line_style = str(inkex.Style(style))
-        attribs = { 'style':line_style, 'id':name, 'd':str(paths.Path(paths.CubicSuperPath(line_path).to_path().to_arrays()))}
+        attribs = { 'style':line_style, 'id':name, 'd':dirtyFormat(line_path)}
         etree.SubElement(parent, inkex.addNS('path','svg'), attribs )
 
     def create_horiz_blocks(self, group, gridy, style):
@@ -677,7 +206,7 @@ class LasercutJigsaw(inkex.Effect):
         count = 0
         for node in gridy.iterchildren():
             if node.tag == inkex.addNS('path','svg'): # which they ALL should because we just made them
-                path = cubicsuperpath.parsePath(node.get('d')) # turn it into a global C style SVG path
+                path = CubicSuperPath(node.get('d')) # turn it into a global C style SVG path
                 #sys.stderr.write("count: %d\n"% count)
                 if count == 0: # first one so use the top border
                     spath = node.get('d') # work on string instead of cubicpath
@@ -703,7 +232,7 @@ class LasercutJigsaw(inkex.Effect):
                     thispath[0].reverse() # reverse the entire line
                     lastpath[0].extend(thispath[0]) # append
                     name = "RowPieces_%d" % (count)
-                    attribs = { 'style':style, 'id':name, 'd':str(paths.Path(paths.CubicSuperPath(lastpath).to_path().to_arrays())) }
+                    attribs = { 'style':style, 'id':name, 'd':dirtyFormat(lastpath) }
                     n = etree.SubElement(group, inkex.addNS('path','svg'), attribs )
                     blocks.append(n) # for direct traversal later
                     n.set('d', n.get('d')+'z') # close it
@@ -736,7 +265,7 @@ class LasercutJigsaw(inkex.Effect):
         count = 0
         for node in gridx.iterchildren():
             if node.tag == inkex.addNS('path','svg'): # which they ALL should because we just made them
-                path = cubicsuperpath.parsePath(node.get('d')) # turn it into a global C style SVG path
+                path = CubicSuperPath(node.get('d')) # turn it into a global C style SVG path
                 #sys.stderr.write("count: %d\n"% count)
                 if count == 0: # first one so use the right border
                     spath = node.get('d') # work on string instead of cubicpath
@@ -762,7 +291,7 @@ class LasercutJigsaw(inkex.Effect):
                     thispath[0].reverse() # reverse the entire line
                     lastpath[0].extend(thispath[0]) # append
                     name = "ColPieces_%d" % (count)
-                    attribs = { 'style':style, 'id':name, 'd':str(paths.Path(paths.CubicSuperPath(lastpath).to_path().to_arrays())) }
+                    attribs = { 'style':style, 'id':name, 'd':dirtyFormat(lastpath) }
                     n = etree.SubElement(group, inkex.addNS('path','svg'), attribs )
                     blocks.append(n) # for direct traversal later
                     n.set('d', n.get('d')+'z') # close it
@@ -811,10 +340,10 @@ class LasercutJigsaw(inkex.Effect):
         # transform them out of the way for now
         for node in xblocks:
             node.set('transform', 'translate(%f,%f)' % (self.width, 0))
-            simpletransform.fuseTransform(node)
+            node.apply_transform()
         for node in yblocks:
             node.set('transform', 'translate(%f,%f)' % (self.width, 0))
-            simpletransform.fuseTransform(node)
+            node.apply_transform()
 
         
     ###--------------------------------------------
@@ -831,7 +360,7 @@ class LasercutJigsaw(inkex.Effect):
         average_block = (self.width/self.pieces_W + self.height/self.pieces_H) / 2
         self.notch_step = average_block * self.options.notch_percent / 3 # 3 = a useful notch size factor
         self.smooth_edges = self.options.smooth_edges
-        self.noknob_frequency = self.options.noknob_frequency		
+        self.noknob_frequency = self.options.noknob_frequency          
         self.random_radius = self.options.rand * average_block / 5 # 5 = a useful range factor
         self.inner_radius = self.options.innerradius
         if self.inner_radius < 0.01: self.inner_radius = 0.0 # snap to 0 for UI error when setting spinner to 0.0
@@ -884,14 +413,11 @@ class LasercutJigsaw(inkex.Effect):
         # Draw Vertical lines on X step with Ystep notches
         for i in range(1, self.pieces_W):
             self.add_jigsaw_horiz_line(0, Xstep*i, Ystep, self.pieces_H, self.height, self.line_style, 'XDiv'+str(i), gridx)
-        # Rotate lines into pos
-        # actualy transform can have multiple transforms in it e.g. 'translate(10,10) rotate(10)'
+            # Rotate lines into pos
+            # actualy transform can have multiple transforms in it e.g. 'translate(10,10) rotate(10)'
         for node in gridx.iterchildren():
             if node.tag == inkex.addNS('path','svg'):
-                node.set('transform', 'rotate(%d)' % 90)
-                simpletransform.fuseTransform(node)
-                node.set('transform', 'translate(%f,%f)' % (self.width, 0))
-                simpletransform.fuseTransform(node)
+                node.set('transform', 'translate(%f,%f) rotate(90)' % (self.width, 0))
         # center the jigsaw
         jigsaw_group.set('transform', 'translate(%f,%f)' % ( (docW-self.width)/2, (docH-self.height)/2 ) )
         
@@ -899,9 +425,7 @@ class LasercutJigsaw(inkex.Effect):
         if self.pieces:
             self.create_pieces(jigsaw_group, gridx,gridy)
             # needs manual boolean ops until that is exposed or we get all the commented code working up top :-(
-        
-
-###
+       
 if __name__ == '__main__':
     e = LasercutJigsaw()
     e.run()
