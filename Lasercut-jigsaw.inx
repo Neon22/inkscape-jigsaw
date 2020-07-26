@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
     <_name>Lasercut Jigsaw</_name>
-    <id>fablabchemnitz.de.lasercut_jigsaw</id>
+    <id>org.inkscape.render.LasercutJigsaw</id>
     <dependency type="executable" location="extensions">fablabchemnitz_lasercut_jigsaw.py</dependency>
     <dependency type="executable" location="extensions">inkex.py</dependency>
     <param name="tab" type="notebook">
@@ -74,12 +74,10 @@ Adjust Notch size and Randomization to avoid overlapping lines:
     <effect>
         <object-type>all</object-type>
         <effects-menu>
-            <submenu _name="FabLab Chemnitz">
-				<submenu _name="Shape/Pattern from Generator"/>
-			</submenu>
+	    <submenu _name="Shape/Pattern from Generator"/>
         </effects-menu>
     </effect>
     <script>
-        <command reldir="extensions" interpreter="python">fablabchemnitz_lasercut_jigsaw.py</command>
+        <command reldir="extensions" interpreter="python">lasercut_jigsaw.py</command>
     </script>
 </inkscape-extension>
