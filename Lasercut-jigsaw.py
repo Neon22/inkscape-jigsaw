@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python3
 '''
 Copyright (C) 2011 Mark Schafer <neon.mark (a) gmail dot com>
 
@@ -37,8 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 __version__ = "0.3"
 
-import inkex, simplestyle, simpletransform
-from simplepath import *
+import inkex
 import sys, math, random, copy
 from lxml import etree
 from inkex.paths import Path, CubicSuperPath
@@ -119,7 +118,7 @@ class LasercutJigsaw(inkex.Effect):
         self.arg_parser.add_argument("-b", "--border", type=inkex.Boolean, default=False, help="Add Outer Surround")
         self.arg_parser.add_argument("-a", "--borderwidth", type=float, default=10.0, help="Size of external surrounding border.")
         self.arg_parser.add_argument("-o", "--outerradius", type=float, default=5.0, help="0 implies square corners")
-        self.arg_parser.add_argument("-p", "--pack", type=str, default="Below", help="Where to place backing piece on page")
+        self.arg_parser.add_argument("-p", "--pack", default="Below", help="Where to place backing piece on page")
         self.arg_parser.add_argument("-g", "--use_seed", type=inkex.Boolean, default=False, help="Use the kerf value as the drawn line width")
         self.arg_parser.add_argument("-s", "--seed", type=int, default=12345, help="Random seed for repeatability")
         self.arg_parser.add_argument("-j", "--pieces", type=inkex.Boolean, default=False, help="Make extra pieces for manual boolean separation.")
@@ -134,7 +133,6 @@ class LasercutJigsaw(inkex.Effect):
                            'stroke-width': self.stroke_width,
                            'stroke-linecap': 'butt',
                            'stroke-linejoin': 'miter'}
-
 
     def add_jigsaw_horiz_line(self, startx, starty, stepx, steps, width, style, name, parent):
         """ complex version All C smooth
@@ -427,5 +425,4 @@ class LasercutJigsaw(inkex.Effect):
             # needs manual boolean ops until that is exposed or we get all the commented code working up top :-(
        
 if __name__ == '__main__':
-    e = LasercutJigsaw()
-    e.run()
+    LasercutJigsaw().run()
