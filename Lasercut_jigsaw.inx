@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+    <name>Lasercut Jigsaw</name>
+    <id>org.inkscape.LasercutJigsaw</id>
+    <dependency type="executable" location="extensions">Lasercut_jigsaw.py</dependency>
+    <param name="tab" type="notebook">
+        <page name="Dimensions" gui-text="Dimensions">
+            <param name="laserjigdim" type="description" xml:space="preserve">Dimensions:
+Define the Jigsaw size and grid size.
+			</param>
+            <param name="width" type="float" min="0.1" max="1000.0" gui-text="Width">100.0</param>
+            <param name="height" type="float" min="0.1" max="1000.0" gui-text="Height">80.0</param>
+            <param name="innerradius" type="float" min="0.0" max="500.0" gui-text="Corner radius">5.0</param>
+            <param name="units" gui-text="Units" type="optiongroup" appearance="radio">
+                <option value="px">px</option>
+                <option value="pt">pt</option>
+                <option value="in">in</option>
+                <option value="cm">cm</option>
+                <option value="mm">mm</option>
+            </param>
+            <param name="border" type="bool" gui-text="Outer Border">false</param>
+            <param name="borderwidth" type="float" min="0.0" max="500.0" gui-text="    Border width">20.0</param>
+            <param name="outerradius" type="float" min="0.0" max="500.0" gui-text="    Border radius">5.0</param>
+            <param name="pack" type="optiongroup" appearance="combo" gui-text="    Pack Location">
+                <item value="Right">Right</item>
+                <item value="Below">Below</item>
+                <item value="Separate">Separate</item>
+            </param>
+            <param name="pieces_W" type="int" min="2" max="199" gui-text="How many pieces across">5</param>
+            <param name="pieces_H" type="int" min="2" max="199" gui-text="How many pieces down">4</param>
+        </page>
+        <page name="Notches" gui-text="Notches">
+            <param name="laserjignot" type="description" xml:space="preserve">Notches:
+The interlocking pieces can be shaped here.
+Also the random nature of the layout.
+			</param>
+            <param name="notch_percent" type="float" min="0.0" max="1.0" gui-text="Notch relative size">0.5</param>
+            <param name="rand" type="float" min="0.0" max="1.0" gui-text="Grid Randomisation">0.4</param>
+            <param name="smooth_edges" type="bool" gui-text="Some edges can be smooth">false</param>
+            <param name="noknob_frequency" type="float" min="0.0" max="100.0" gui-text="   percentage of smooth edges">10</param>
+            <param name="use_seed" type="bool" gui-text="Random jigsaw">true</param>
+            <param name="seed" type="int" min="0" max="99999999" gui-text="   or Jigsaw pattern (seed)">12345</param>
+            <param name="laserjigspace" type="description" xml:space="preserve">
+Empty
+			</param>
+            <param name="pieces" type="bool" gui-text="Create pieces as well (-experimental)">false</param>
+        </page>
+        <page name="Usage" gui-text="Usage">
+            <param name="laserjiguse" type="description" xml:space="preserve">Lasercut Jigsaw:
+			
+Jigsaw lines are single for minimal laser cutting.
+   (The pieces are not discrete shapes.)
+The outer edge can be a rectangle or have rounded corners.
+
+A border suround can be added to frame the jigsaw.
+
+Notch size is related to the averaged Jigsaw piece size.
+
+Randomization creates irregularity for unique pieces.
+
+Adjust Notch size and Randomization to avoid overlapping lines:
+  - High values of randomization will cause overlapping lines
+    on small notches.
+  - Highly unbalanced grids (E.g. 9x2 with 0.5 notches) will
+    create overlapping lines.
+	
+	
+	
+	
+		</param>
+        </page>
+    </param>
+    <effect>
+        <object-type>all</object-type>
+        <effects-menu>
+			<submenu name="Render"/>
+        </effects-menu>
+    </effect>
+    <script>
+        <command location="inx" interpreter="python">Lasercut_jigsaw.py</command>
+    </script>
+</inkscape-extension>

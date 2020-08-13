@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #    - taking two rows(cols) at a time - reverse the second one and concat on end - add z to close
 #    - taking a row and a col - do intersect = piece.
 
-__version__ = "0.3"
+__version__ = "0.4"
 
 import inkex
 import sys, math, random, copy
@@ -109,7 +109,7 @@ class LasercutJigsaw(inkex.Effect):
         inkex.Effect.__init__(self)
         self.arg_parser.add_argument("-x", "--width", type=float, default=50.0, help="The Box Width - in the X dimension")
         self.arg_parser.add_argument("-y", "--height", type=float, default=30.0, help="The Box Height - in the Y dimension")
-        self.arg_parser.add_argument("-u", "--units", default="cm", help="The unit of the box dimensions")
+        self.arg_parser.add_argument("-u", "--units", type=str, default="cm", help="The unit of the box dimensions")
         self.arg_parser.add_argument("-w", "--pieces_W", type=int, default=11, help="How many pieces across")
         self.arg_parser.add_argument("-z", "--pieces_H", type=int, default=11, help="How many pieces down")
         self.arg_parser.add_argument("-k", "--notch_percent", type=float, default=0.0, help="Notch relative size. 0 to 1. 0.15 is good")
@@ -118,7 +118,7 @@ class LasercutJigsaw(inkex.Effect):
         self.arg_parser.add_argument("-b", "--border", type=inkex.Boolean, default=False, help="Add Outer Surround")
         self.arg_parser.add_argument("-a", "--borderwidth", type=float, default=10.0, help="Size of external surrounding border.")
         self.arg_parser.add_argument("-o", "--outerradius", type=float, default=5.0, help="0 implies square corners")
-        self.arg_parser.add_argument("-p", "--pack", default="Below", help="Where to place backing piece on page")
+        self.arg_parser.add_argument("-p", "--pack", type=str, default="Below", help="Where to place backing piece on page")
         self.arg_parser.add_argument("-g", "--use_seed", type=inkex.Boolean, default=False, help="Use the kerf value as the drawn line width")
         self.arg_parser.add_argument("-s", "--seed", type=int, default=12345, help="Random seed for repeatability")
         self.arg_parser.add_argument("-j", "--pieces", type=inkex.Boolean, default=False, help="Make extra pieces for manual boolean separation.")
@@ -425,4 +425,5 @@ class LasercutJigsaw(inkex.Effect):
             # needs manual boolean ops until that is exposed or we get all the commented code working up top :-(
        
 if __name__ == '__main__':
-    LasercutJigsaw().run()
+	e = LasercutJigsaw()
+	e.run()
