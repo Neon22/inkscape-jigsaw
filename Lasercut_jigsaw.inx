@@ -2,7 +2,7 @@
 <inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
     <name>Lasercut Jigsaw</name>
     <id>org.inkscape.LasercutJigsaw</id>
-    <dependency type="executable" location="extensions">Lasercut_jigsaw.py</dependency>
+    <dependency type="executable" location="inx">Lasercut_jigsaw.py</dependency>
     <param name="tab" type="notebook">
         <page name="Dimensions" gui-text="Dimensions">
             <param name="laserjigdim" type="description" xml:space="preserve">Dimensions:
