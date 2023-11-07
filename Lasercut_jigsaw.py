@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ### 0.1 make basic jigsaw for lasercut - March 2011
 ### 0.2 add random seed so repeatable, add pieces for manual booleans - May 2011
 ### 0.3 add some no-knob edges - June 2019
+### 0.4
 
 ### Todo
 # add option to cut pieces:
